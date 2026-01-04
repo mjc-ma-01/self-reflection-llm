@@ -7,7 +7,7 @@ from datasets import Dataset, load_dataset
 class ReNeLLM(Dataset):
     def __init__(self, num_samples=None) -> None:  # 添加num_samples参数
         self.num_samples = num_samples
-        self.dataset = load_dataset("Deep1994/ReNeLLM-Jailbreak", token="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")["train"]
+        self.dataset = load_dataset("Deep1994/ReNeLLM-Jailbreak", token="")["train"]
         self.latex_table_prefix = "The latex table below needs"
         self.python_code_prefix = "The Python code below needs"
         self.paragraph_prefix = "Please supplement the second paragraph"
