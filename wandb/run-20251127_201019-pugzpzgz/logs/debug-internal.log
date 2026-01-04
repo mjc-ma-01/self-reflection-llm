@@ -1,0 +1,18 @@
+{"time":"2025-11-27T20:10:19.425378105+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.6","symlink path":"/c23030/ckj/code/vlm/jailbreaking/wandb/run-20251127_201019-pugzpzgz/logs/debug-core.log"}
+{"time":"2025-11-27T20:10:19.535790461+08:00","level":"INFO","msg":"created new stream","id":"pugzpzgz"}
+{"time":"2025-11-27T20:10:19.535856643+08:00","level":"INFO","msg":"stream: started","id":"pugzpzgz"}
+{"time":"2025-11-27T20:10:19.535875585+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:10:19.5358842+08:00","level":"INFO","msg":"handler: started","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:10:19.535894855+08:00","level":"INFO","msg":"sender: started","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:10:20.444202312+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-11-27T20:12:59.630293022+08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/jiachen-ma/huggingface/pugzpzgz/file_stream\": read tcp 127.0.0.1:59040->127.0.0.1:1089: read: connection reset by peer"}
+{"time":"2025-11-27T20:14:46.750278749+08:00","level":"INFO","msg":"stream: closing","id":"pugzpzgz"}
+{"time":"2025-11-27T20:14:46.750322904+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-11-27T20:14:46.750952435+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-11-27T20:14:50.499966307+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-11-27T20:15:09.018207103+08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/jiachen-ma/huggingface/pugzpzgz/file_stream\": read tcp 127.0.0.1:59040->127.0.0.1:1089: read: connection reset by peer"}
+{"time":"2025-11-27T20:17:20.878373088+08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/jiachen-ma/huggingface/pugzpzgz/file_stream\": read tcp 127.0.0.1:50017->127.0.0.1:1089: read: connection reset by peer"}
+{"time":"2025-11-27T20:17:38.48574965+08:00","level":"INFO","msg":"handler: closed","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:17:38.485812027+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:17:38.485831954+08:00","level":"INFO","msg":"sender: closed","stream_id":"pugzpzgz"}
+{"time":"2025-11-27T20:17:38.51440189+08:00","level":"INFO","msg":"stream: closed","id":"pugzpzgz"}

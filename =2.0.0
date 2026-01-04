@@ -1,0 +1,2 @@
+Requirement already satisfied: pydantic in /c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages (1.10.24)
+Requirement already satisfied: typing-extensions>=4.2.0 in /c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages (from pydantic) (4.15.0)

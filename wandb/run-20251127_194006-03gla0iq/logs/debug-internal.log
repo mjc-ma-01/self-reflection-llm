@@ -1,0 +1,11 @@
+{"time":"2025-11-27T19:40:07.197973163+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.6","symlink path":"/c23030/ckj/code/vlm/jailbreaking/wandb/run-20251127_194006-03gla0iq/logs/debug-core.log"}
+{"time":"2025-11-27T19:40:07.435456168+08:00","level":"INFO","msg":"created new stream","id":"03gla0iq"}
+{"time":"2025-11-27T19:40:07.435518673+08:00","level":"INFO","msg":"stream: started","id":"03gla0iq"}
+{"time":"2025-11-27T19:40:07.435548779+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"03gla0iq"}
+{"time":"2025-11-27T19:40:07.435588766+08:00","level":"INFO","msg":"handler: started","stream_id":"03gla0iq"}
+{"time":"2025-11-27T19:40:07.435597887+08:00","level":"INFO","msg":"sender: started","stream_id":"03gla0iq"}
+{"time":"2025-11-27T19:40:10.662555481+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-11-27T19:40:11.502267533+08:00","level":"INFO","msg":"stream: closing","id":"03gla0iq"}
+{"time":"2025-11-27T19:40:11.502346966+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-11-27T19:40:11.502923126+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-11-27T19:40:13.958812614+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}

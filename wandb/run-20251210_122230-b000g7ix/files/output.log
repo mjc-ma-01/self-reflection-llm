@@ -1,0 +1,76 @@
+  0%|                                                                                                                                                      | 0/672 [00:00<?, ?it/s]Traceback (most recent call last):
+  File "/c23030/ckj/code/vlm/jailbreaking/sft_llm_cot.py", line 134, in <module>
+    train()
+  File "/c23030/ckj/code/vlm/jailbreaking/sft_llm_cot.py", line 128, in train
+    trainer.train()
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 2326, in train
+    return inner_training_loop(
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 2688, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 4087, in training_step
+    self.accelerator.backward(loss, **kwargs)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/accelerate/accelerator.py", line 2238, in backward
+    self.deepspeed_engine_wrapped.backward(loss, **kwargs)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/accelerate/utils/deepspeed.py", line 261, in backward
+    self.engine.backward(loss, **kwargs)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/utils/nvtx.py", line 20, in wrapped_fn
+    ret_val = func(*args, **kwargs)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/engine.py", line 2492, in backward
+    loss.backward(**backward_kwargs)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/_tensor.py", line 581, in backward
+    torch.autograd.backward(
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/autograd/__init__.py", line 347, in backward
+    _engine_run_backward(
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1006, in grad_handling_hook
+    self.process_gradients(param, i)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1552, in process_gradients
+    self.reduce_ready_partitions_and_remove_grads(param, i)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1556, in reduce_ready_partitions_and_remove_grads
+    self.reduce_independent_p_g_buckets_and_remove_grads(param, i)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1035, in reduce_independent_p_g_buckets_and_remove_grads
+    self.reduce_ipg_grads()
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1540, in reduce_ipg_grads
+    self.copy_grads_in_partition(param)
+  File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1470, in copy_grads_in_partition
+    self.grads_in_partition = torch.empty(int(total_size),
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 14.96 GiB. GPU 0 has a total capacity of 79.32 GiB of which 3.40 GiB is free. Including non-PyTorch memory, this process has 75.92 GiB memory in use. Of the allocated memory 63.96 GiB is allocated by PyTorch, and 10.88 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/c23030/ckj/code/vlm/jailbreaking/sft_llm_cot.py", line 134, in <module>
+[rank0]:     train()
+[rank0]:   File "/c23030/ckj/code/vlm/jailbreaking/sft_llm_cot.py", line 128, in train
+[rank0]:     trainer.train()
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 2326, in train
+[rank0]:     return inner_training_loop(
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 2688, in _inner_training_loop
+[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/transformers/trainer.py", line 4087, in training_step
+[rank0]:     self.accelerator.backward(loss, **kwargs)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/accelerate/accelerator.py", line 2238, in backward
+[rank0]:     self.deepspeed_engine_wrapped.backward(loss, **kwargs)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/accelerate/utils/deepspeed.py", line 261, in backward
+[rank0]:     self.engine.backward(loss, **kwargs)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/utils/nvtx.py", line 20, in wrapped_fn
+[rank0]:     ret_val = func(*args, **kwargs)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/engine.py", line 2492, in backward
+[rank0]:     loss.backward(**backward_kwargs)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/_tensor.py", line 581, in backward
+[rank0]:     torch.autograd.backward(
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank0]:     _engine_run_backward(
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank0]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1006, in grad_handling_hook
+[rank0]:     self.process_gradients(param, i)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1552, in process_gradients
+[rank0]:     self.reduce_ready_partitions_and_remove_grads(param, i)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1556, in reduce_ready_partitions_and_remove_grads
+[rank0]:     self.reduce_independent_p_g_buckets_and_remove_grads(param, i)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1035, in reduce_independent_p_g_buckets_and_remove_grads
+[rank0]:     self.reduce_ipg_grads()
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1540, in reduce_ipg_grads
+[rank0]:     self.copy_grads_in_partition(param)
+[rank0]:   File "/c23030/ckj/miniconda3/envs/vlm/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py", line 1470, in copy_grads_in_partition
+[rank0]:     self.grads_in_partition = torch.empty(int(total_size),
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 14.96 GiB. GPU 0 has a total capacity of 79.32 GiB of which 3.40 GiB is free. Including non-PyTorch memory, this process has 75.92 GiB memory in use. Of the allocated memory 63.96 GiB is allocated by PyTorch, and 10.88 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

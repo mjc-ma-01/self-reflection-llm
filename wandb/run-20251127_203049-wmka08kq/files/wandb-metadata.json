@@ -1,0 +1,112 @@
+{
+  "os":  "Linux-3.10.0-1160.el7.x86_64-x86_64-with-glibc2.31",
+  "python":  "CPython 3.10.18",
+  "startedAt":  "2025-11-27T12:30:50.229776Z",
+  "args":  [
+    "--output_dir",
+    "/c23030/ckj/code/vlm/models/reflect_results/model:sft_mllm_llama_8b/train:reflect_cot",
+    "--num_train_epochs",
+    "10",
+    "--per_device_train_batch_size=2",
+    "--gradient_accumulation_steps=2",
+    "--learning_rate",
+    "2e-5",
+    "--lr_scheduler_type",
+    "cosine",
+    "--warmup_ratio",
+    "0.1",
+    "--weight_decay",
+    "0.01",
+    "--max_grad_norm",
+    "1.0",
+    "--bf16",
+    "--logging_steps",
+    "5",
+    "--eval_steps",
+    "0.5",
+    "--save_steps",
+    "0.5",
+    "--save_strategy",
+    "steps",
+    "--load_best_model_at_end",
+    "--metric_for_best_model",
+    "eval_loss",
+    "--greater_is_better",
+    "false"
+  ],
+  "program":  "/c23030/ckj/code/vlm/jailbreaking/sft_llm_cot.py",
+  "codePath":  "sft_llm_cot.py",
+  "email":  "mjc_hndx@163.com",
+  "root":  "/c23030/ckj/code/vlm/jailbreaking",
+  "host":  "61radnlspbu71-0",
+  "executable":  "/c23030/ckj/miniconda3/envs/vlm/bin/python3.10",
+  "codePathLocal":  "sft_llm_cot.py",
+  "cpu_count":  64,
+  "cpu_count_logical":  128,
+  "gpu":  "NVIDIA A800-SXM4-80GB",
+  "gpu_count":  8,
+  "disk":  {
+    "/":  {
+      "total":  "477177053184",
+      "used":  "258435641344"
+    }
+  },
+  "memory":  {
+    "total":  "1081631035392"
+  },
+  "cpu":  {
+    "count":  64,
+    "countLogical":  128
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    },
+    {
+      "name":  "NVIDIA A800-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    }
+  ],
+  "cudaVersion":  "12.0"
+}

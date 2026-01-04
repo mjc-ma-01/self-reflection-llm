@@ -1,0 +1,12 @@
+{"time":"2025-12-23T10:57:01.274166429+08:00","level":"INFO","msg":"stream: starting","core version":"0.23.1"}
+{"time":"2025-12-23T10:57:02.496434888+08:00","level":"INFO","msg":"stream: created new stream","id":"sim0y14h"}
+{"time":"2025-12-23T10:57:02.496521106+08:00","level":"INFO","msg":"handler: started","stream_id":"sim0y14h"}
+{"time":"2025-12-23T10:57:02.497109964+08:00","level":"INFO","msg":"stream: started","id":"sim0y14h"}
+{"time":"2025-12-23T10:57:02.497129156+08:00","level":"INFO","msg":"sender: started","stream_id":"sim0y14h"}
+{"time":"2025-12-23T10:57:02.497131425+08:00","level":"INFO","msg":"writer: started","stream_id":"sim0y14h"}
+{"time":"2025-12-23T11:02:40.539537926+08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/ttttonyhe-team/huggingface/sim0y14h/file_stream\": read tcp 127.0.0.1:59043->127.0.0.1:1089: read: connection reset by peer"}
+{"time":"2025-12-23T11:03:01.403304106+08:00","level":"INFO","msg":"stream: closing","id":"sim0y14h"}
+{"time":"2025-12-23T11:03:02.768428461+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-23T11:03:03.393471775+08:00","level":"INFO","msg":"handler: closed","stream_id":"sim0y14h"}
+{"time":"2025-12-23T11:03:03.394316392+08:00","level":"INFO","msg":"sender: closed","stream_id":"sim0y14h"}
+{"time":"2025-12-23T11:03:03.394342276+08:00","level":"INFO","msg":"stream: closed","id":"sim0y14h"}
