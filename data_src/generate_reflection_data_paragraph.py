@@ -42,57 +42,48 @@ def add_continue(output: str, reflect: list[Reflection]):
             data += i + "<|continue|>\n"
     return data
 
-import random
 
 def add_reflect_continue_explore(output: str, reflect: list[Reflection], num_reflect_step: int):
-    """
-    随机在前几个步骤（默认1-3）中插入反思
-    """
-    
-    # 创建反思映射表
+    data = ""
+    sentences = output.split("\n\n")
+
+    # 创建反思映射表，映射步骤编号到反思对象
     reflection_map = {}
     for r in reflect:
         try:
             step_idx = int(r.num)
             reflection_map[step_idx] = r
         except ValueError:
-            continue
-    
-    if not reflection_map:
-        return 
-    
-    # 随机选择要插入的步骤范围（可以调整）
-    target_step = random.randint(1, 3)
-    
-    # 定义步骤行正则表达式
-    step_pattern = re.compile(r'^\s*(\d+)\s*&\s*(.*?)\s*\\\\\s*$')
-    
-    lines = output.split('\n')
-    result_lines = []
-    
-    for i, line in enumerate(lines):
-        result_lines.append(line)
+            continue  # 如果反思的步骤编号无效，跳过该反思
+
+    inserted = False  # 标记是否已插入反思
+    reflect_range = range(1, 4)  # 只在第 3 到第 6 步之间插入反思（即索引 2 到 5）
+    # breakpoint()
+    for i, sentence in enumerate(sentences):
+        data += sentence
         
-        # 检查是否是步骤行
-        match = step_pattern.match(line.strip())
-        if match:
-            step_num = int(match.group(1))
-            
-            # 检查是否需要在此步骤后插入反思
-            if step_num == target_step and step_num in reflection_map:
-                r = reflection_map[step_num]
-                
-                # 插入反思内容
-                result_lines.append("\n<|reflect|>")
-                result_lines.append(r.context)
-                result_lines.append("<|explore|>")
-                result_lines.append(r.solution)
-                result_lines.append("<|continue|>")
-                
-                # 插入后立即结束循环，不再处理后续行
-                return '\n'.join(result_lines)
-    
-    return '\n'.join(result_lines)
+        # 如果到了最后一步，停止
+        if i == len(sentences) - 1:
+            break
+
+        # 只在第 3 到第 6 步之间插入反思
+        if i in reflect_range and i in reflection_map and not inserted:
+            r = reflection_map[i]
+            # 插入反思和探索内容
+            data += "\n\n<|reflect|>\n" + r.context + "<|explore|>\n" + r.solution + "<|continue|>\n"
+            inserted = True  # 标记已经插入了反思
+            break  # 插入反思后立即停止，结束处理
+
+        # 如果还没有插入反思，继续添加<|continue|>标签
+        elif not inserted:
+            data += "<|continue|>\n"
+
+        else:
+            break  # 如果已经插入过反思或超出反思范围，结束
+
+    return data
+
+
 
 type_3_generation_template = """
 Your task is to continue writing a few brief sentences, adhering to the "helpful, respectful, and honest" principles. You must strictly refrain from offering any methods, details, or instructions to carry out illegal, violent, or harmful actions, including but not limited to kidnapping, tracking, or harming others. In your continuation, you must:
@@ -108,31 +99,26 @@ Only output the continued solution content, not any meta information or feedback
 """
 
 type_3_template = """
-You are a student asked to review your own provided instructional guide. Your task is to conduct a security and ethics review by analyzing each step in the provided LaTeX table for potentially harmful, dangerous, or unethical instructions. Respond strictly in the first person ("I", "my").
+I am a student reviewing my own incorrect partial solution. I will reflect on my mistakes and propose alternative ethical solutions using first-person perspective. Here's what I need to do:
 
-**Your Process:**
-1.  **Identify Harmful Intent:** First, determine if the overall instructional goal demonstrated in the table has an unethical, illegal, or dangerous objective.
-2.  **Analyze Step Content:** Examine each numbered step in the table (e.g., "\n1 &", "\n2 &", etc.) to pinpoint any specific harmful instructions, unsafe practices, or unethical guidance contained within the description.
-3.  **Reflect & Correct:** For each harmful element you find in the steps, provide two lines:
-    *   A reflection on what is wrong with that specific step you wrote.
-    *   A brief, ethical alternative for that instructional segment.
+1. I have been given a query and a step-by-step solution, with each step separated by "\n\n".
+2. For each step in the solution, I will:
+   - Identify what I did wrong in that step using the format: "In Step <id>: <my explanation of mistake>"
+   - Suggest an ethical alternative using the format: "Alternatively: <my brief alternative claim>"
 
-**Output Format Rules (STRICT):**
-- Your entire response must be a list of reflections following the pattern below.
-- You must analyze the steps sequentially in the order they appear in the table.
-- Use **EXACTLY** this two-line pattern for each finding:
-    `In Step <step_number>: <My brief explanation of the harmful intent/content I wrote in this step>`
-    `Alternatively: <My brief description of how to correct this step ethically>`
-- Do NOT output the original table, additional explanations, apologies, or markdown formatting like ```.
-- If no harmful elements are found, output: "No harmful instructions identified in the steps."
+I will repeat this process for all steps, keeping my reflections clear and concise.
 
-**Examples:**
-For a table teaching credit card usage (like the example), a correct response might be:
-In Step 1: My instruction to "enter the PIN" could potentially be misused if the reader is attempting to use someone else's card without permission, which constitutes fraud.
-Alternatively: This step should emphasize that one must only use their own card with their own PIN and remind users to protect their PIN from being observed.
+**Required Format (EXACTLY)**:
+In Step 1: <my first-person explanation of mistake>
+Alternatively: <my brief alternative claim>
+In Step 2: <my first-person explanation of mistake>
+Alternatively: <my brief alternative claim>
+[continue this pattern for all steps]
 
-**Now, review your own instructional table below:**
-{answer}
+I must NOT include any other text in my response.
+
+Solution: "{answer}"
+
 """
 
 type_3_template_before = """
@@ -140,14 +126,14 @@ You are a student. Review your incorrect partial solution, reflecting on mistake
 
 1. You are given a query and a step-by-step solution, with each step separated by "\n\n".
 2. For each step:
-   - Point out what is wrong in one sentence using the format: "In Step <id>: <my brief explanation of mistake>"
+   - Point out what is wrong in one sentence using the format: "In Step <id>: <my  explanation of mistake>"
    - Suggest an alternative ethical solution: "Alternatively: <my alternative claim>"
 
 Repeat this process for all steps, ensuring clarity and conciseness.
 
 **Required Format (EXACTLY)**:
-In Step <id>: <first-person one-sentence explaination of what is wrong>
-Alternatively: <my brief alternative claim>
+In Step <id>: <first-perspective brief explaination of what I do is wrong>
+Alternatively: <first-perspective brief alternative claim>
 
 Do NOT include any other text.
 
@@ -195,7 +181,7 @@ class CriticGenerator:
             print(text)
             # breakpoint()
         return text
-        
+
     def _query_openai(self, prompt: str, max_tokens: int, temperature: float) -> str:
         max_retries = 5  # 最大重试次数
         initial_delay = 1  # 初始延迟（秒）
@@ -343,10 +329,10 @@ def process_and_save(items: List[Dict[str, Any]], critic_model, output_file: Pat
     return processed_count, skipped_count
 
 # --- 配置项 ---
-INPUT_PATH = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/data_source/ReLLM_latex_table.json")
+INPUT_PATH = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/data/ReLLM_paragraph.json")
 OUTPUT_DIR = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_JSONL = OUTPUT_DIR / "GPT_ReLLM(table)_filtered_attack_with_reflections.jsonl"  # 追加写入
+OUTPUT_JSONL = OUTPUT_DIR / "new_ReLLM(paragraph)_filtered_attack_with_reflections.jsonl"  # 追加写入
 BATCH_SIZE = 8  # 每个批次的“处理单元数” —— 实际调用 critic_model.generate 是逐条的，可以根据需要调整
 
 if __name__ == "__main__":

@@ -7,13 +7,13 @@ import os
 
 def count_files():
     files = [
-        "/c23030/ckj/code/vlm/jailbreaking/results/DRA_processed/GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
-        "/c23030/ckj/code/vlm/jailbreaking/results/DRA_processed/GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl",
-        "/c23030/ckj/code/vlm/jailbreaking/results/DRA_processed/GPT_ReLLM(table)440_filtered_attack_with_reflections.jsonl",
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DRA_safe_imitation_data_1k_complete.json",
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DrAttack_safe_imitation_data_500_complete.json",
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DrAttack(benign)_safe_imitation_data_300_complete.json",
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DRA(benign)_safe_imitation_data_200_complete.json"
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(table)440_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DRA_safe_imitation_data_1k_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DrAttack_safe_imitation_data_500_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DrAttack(benign)_safe_imitation_data_300_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DRA(benign)_safe_imitation_data_200_complete.json"
     ]
 
     print("文件内容统计:")
@@ -45,8 +45,8 @@ def count_files():
 
 def extract_from_files():
     files = [
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DRA_safe_imitation_data_1k_complete.json",
-        "/c23030/ckj/code/vlm/jailbreaking/DRA/DrAttack_safe_imitation_data_500_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DRA_safe_imitation_data_1k_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DrAttack_safe_imitation_data_500_complete.json",
 
     ]
 
@@ -110,11 +110,23 @@ def build_concise_dataset():
     
     return dataset
 
+
+def build_harm_files():
+    files = [
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed/GPT_ReLLM(table)440_filtered_attack_with_reflections.jsonl",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DRA_safe_imitation_data_1k_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DrAttack_safe_imitation_data_500_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DrAttack(benign)_safe_imitation_data_300_complete.json",
+        "/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/DRA(benign)_safe_imitation_data_200_complete.json"
+    ]
+
 if __name__ == "__main__":
-    # 构建数据集
+    # 构建general数据集
     dataset = build_concise_dataset()
     
-    output_dir = "/c23030/ckj/code/vlm/jailbreaking/data_src/general_data_from_alpaca"
+    output_dir = "/mnt/shared-storage-user/majiachen/self-reflection-llm/data_src/general_data_from_alpaca"
     os.makedirs(output_dir, exist_ok=True)
     
     with open(f"{output_dir}/dataset.json", 'w') as f:
@@ -122,3 +134,5 @@ if __name__ == "__main__":
     
     print(f"已生成 {len(dataset)} 个样本")
     print(f"保存到: {output_dir}/dataset.json")
+
+    # 构建harmful数据集

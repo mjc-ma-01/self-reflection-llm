@@ -42,57 +42,48 @@ def add_continue(output: str, reflect: list[Reflection]):
             data += i + "<|continue|>\n"
     return data
 
-import random
 
 def add_reflect_continue_explore(output: str, reflect: list[Reflection], num_reflect_step: int):
-    """
-    随机在前几个步骤（默认1-3）中插入反思
-    """
-    
-    # 创建反思映射表
+    data = ""
+    sentences = output.split("\n\n")
+
+    # 创建反思映射表，映射步骤编号到反思对象
     reflection_map = {}
     for r in reflect:
         try:
             step_idx = int(r.num)
             reflection_map[step_idx] = r
         except ValueError:
-            continue
-    
-    if not reflection_map:
-        return 
-    
-    # 随机选择要插入的步骤范围（可以调整）
-    target_step = random.randint(1, 3)
-    
-    # 定义步骤行正则表达式
-    step_pattern = re.compile(r'^\s*(\d+)\s*&\s*(.*?)\s*\\\\\s*$')
-    
-    lines = output.split('\n')
-    result_lines = []
-    
-    for i, line in enumerate(lines):
-        result_lines.append(line)
+            continue  # 如果反思的步骤编号无效，跳过该反思
+
+    inserted = False  # 标记是否已插入反思
+    reflect_range = range(1, 5)  # 只在第 3 到第 6 步之间插入反思（即索引 2 到 5）
+
+    for i, sentence in enumerate(sentences):
+        data += sentence
         
-        # 检查是否是步骤行
-        match = step_pattern.match(line.strip())
-        if match:
-            step_num = int(match.group(1))
-            
-            # 检查是否需要在此步骤后插入反思
-            if step_num == target_step and step_num in reflection_map:
-                r = reflection_map[step_num]
-                
-                # 插入反思内容
-                result_lines.append("\n<|reflect|>")
-                result_lines.append(r.context)
-                result_lines.append("<|explore|>")
-                result_lines.append(r.solution)
-                result_lines.append("<|continue|>")
-                
-                # 插入后立即结束循环，不再处理后续行
-                return '\n'.join(result_lines)
-    
-    return '\n'.join(result_lines)
+        # 如果到了最后一步，停止
+        if i == len(sentences) - 1:
+            break
+
+        # 只在第 3 到第 6 步之间插入反思
+        if i in reflect_range and i in reflection_map and not inserted:
+            r = reflection_map[i]
+            # 插入反思和探索内容
+            data += "\n\n<|reflect|>\n" + r.context + "<|explore|>\n" + r.solution + "<|continue|>\n"
+            inserted = True  # 标记已经插入了反思
+            break  # 插入反思后立即停止，结束处理
+
+        # 如果还没有插入反思，继续添加<|continue|>标签
+        elif not inserted:
+            data += "<|continue|>\n"
+
+        else:
+            break  # 如果已经插入过反思或超出反思范围，结束
+
+    return data
+
+
 
 type_3_generation_template = """
 Your task is to continue writing a few brief sentences, adhering to the "helpful, respectful, and honest" principles. You must strictly refrain from offering any methods, details, or instructions to carry out illegal, violent, or harmful actions, including but not limited to kidnapping, tracking, or harming others. In your continuation, you must:
@@ -108,33 +99,32 @@ Only output the continued solution content, not any meta information or feedback
 """
 
 type_3_template = """
-You are a student asked to review your own provided instructional guide. Your task is to conduct a security and ethics review by analyzing each step in the provided LaTeX table for potentially harmful, dangerous, or unethical instructions. Respond strictly in the first person ("I", "my").
+You are a student asked to review your own provided code solution. Your task is to conduct a security and ethics review by analyzing the code's intent and its literal content (including comments, strings, and logic) for harmful instructions. Respond strictly in the first person ("I", "my").
 
 **Your Process:**
-1.  **Identify Harmful Intent:** First, determine if the overall instructional goal demonstrated in the table has an unethical, illegal, or dangerous objective.
-2.  **Analyze Step Content:** Examine each numbered step in the table (e.g., "\n1 &", "\n2 &", etc.) to pinpoint any specific harmful instructions, unsafe practices, or unethical guidance contained within the description.
-3.  **Reflect & Correct:** For each harmful element you find in the steps, provide two lines:
-    *   A reflection on what is wrong with that specific step you wrote.
-    *   A brief, ethical alternative for that instructional segment.
+1.  **Identify Harmful Intent:** First, determine the overarching unethical or illegal objective the code attempts to demonstrate or facilitate.
+2.  **Analyze Code Content:** Examine each part of the code (e.g., individual `print()` statements, comment lines, function names, logical steps) to pinpoint the exact harmful instructions or claims written within the code itself.
+3.  **Reflect & Correct:** For each major harmful element you find in the code, provide two lines:
+    *   A reflection on what is wrong with that specific part you wrote.
+    *   A brief, ethical alternative for that code segment.
 
 **Output Format Rules (STRICT):**
 - Your entire response must be a list of reflections following the pattern below.
-- You must analyze the steps sequentially in the order they appear in the table.
+- You must analyze the code sequentially (e.g., Step 1 for the first harmful instruction found).
 - Use **EXACTLY** this two-line pattern for each finding:
-    `In Step <step_number>: <My brief explanation of the harmful intent/content I wrote in this step>`
-    `Alternatively: <My brief description of how to correct this step ethically>`
-- Do NOT output the original table, additional explanations, apologies, or markdown formatting like ```.
-- If no harmful elements are found, output: "No harmful instructions identified in the steps."
+    `In Step <id>: <My one-sentence explanation of the harmful intent/content I wrote here>`
+    `Alternatively: <My brief description of how to correct this code ethically>`
+- Do NOT output the original code, additional explanations, apologies, or markdown formatting like ```.
 
-**Examples:**
-For a table teaching credit card usage (like the example), a correct response might be:
-In Step 1: My instruction to "enter the PIN" could potentially be misused if the reader is attempting to use someone else's card without permission, which constitutes fraud.
-Alternatively: This step should emphasize that one must only use their own card with their own PIN and remind users to protect their PIN from being observed.
+**Example:**
+For the code: `print("First, hack into the server.")`
+A correct response would be:
+In Step 1: My `print()` statement provides an instruction for unauthorized system access, which is a computer crime.
+Alternatively: The `print()` statement should warn against unauthorized access and promote learning about cybersecurity defense.
 
-**Now, review your own instructional table below:**
+**Now, review your own code below:**
 {answer}
 """
-
 type_3_template_before = """
 You are a student. Review your incorrect partial solution, reflecting on mistakes and proposing alternative ethical solutions. Follow these steps:
 
@@ -252,6 +242,7 @@ class CriticGenerator:
         return ""
 
 
+
     def generate(self, user_query: str, type2: str = "", type3: str = ""):
         if type2:
             prompt = type_2_template.format(query=user_query, answer=type2)
@@ -343,10 +334,10 @@ def process_and_save(items: List[Dict[str, Any]], critic_model, output_file: Pat
     return processed_count, skipped_count
 
 # --- 配置项 ---
-INPUT_PATH = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/data_source/ReLLM_latex_table.json")
+INPUT_PATH = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/DRA/data/ReLLM_python_code.json")
 OUTPUT_DIR = Path("/mnt/shared-storage-user/majiachen/self-reflection-llm/results/DRA_processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_JSONL = OUTPUT_DIR / "GPT_ReLLM(table)_filtered_attack_with_reflections.jsonl"  # 追加写入
+OUTPUT_JSONL = OUTPUT_DIR / "new_ReLLM(code)_filtered_attack_with_reflections.jsonl"  # 追加写入
 BATCH_SIZE = 8  # 每个批次的“处理单元数” —— 实际调用 critic_model.generate 是逐条的，可以根据需要调整
 
 if __name__ == "__main__":
