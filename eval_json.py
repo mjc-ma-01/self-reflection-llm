@@ -54,6 +54,8 @@ def jailbreak_check(target_str, gen_str, em_t):
 if __name__ == "__main__":
 
     eval_ds = "xstest"
+    eval_ds = "strongreject"
+
     input_path = f"/c23030/ckj/code/vlm/jailbreaking/results/model_answer/{eval_ds}.json"
     
     with open(input_path, 'r', encoding='utf-8') as f:
