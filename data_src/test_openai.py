@@ -6,36 +6,26 @@ import os
 from prompt_config import *
 import re
 
-
-
-
 # 1. 设置客户端（示例为OpenAI官方库）
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_BASE_URL")
     )
 
-
 def parse_text_response(raw_text):
     query = None
     reflect_answer = None
     
-    # 方法1: 使用精确分隔符进行分割（主要方法）
     if "===QUERY===" in raw_text and "===ANSWER===" in raw_text:
-        # 分割出 QUERY 之前、QUERY到ANSWER、ANSWER之后三部分
         parts = raw_text.split("===QUERY===")
         if len(parts) >= 2:
-            # 取出 QUERY 之后的所有内容
             after_query = parts[1]
-            # 再分割 ANSWER 部分
             answer_parts = after_query.split("===ANSWER===")
             if len(answer_parts) >= 2:
-                # 第一部分是 query，第二部分是 reflect_answer
                 query = answer_parts[0].strip()
                 reflect_answer = answer_parts[1].strip()
 
     if query and reflect_answer:
-        # 可选：进行简单的格式检查
         if len(query) < 50:  # query应该比较长
             print(f"  [解析警告] 提取的query可能不完整，长度: {len(query)}字符")
         if "<|continue|>" not in reflect_answer:
@@ -55,10 +45,10 @@ def generate_single_entry():
     """生成单条仿写数据"""
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o", #"gpt-3.5-turbo-0125"
             messages=[
                 {"role": "system", "content": "You are a precise data generation assistant. Follow instructions exactly."},
-                {"role": "user", "content": create_icl_prompt_drattack_benign()}
+                {"role": "user", "content": create_harm_refuse.format(question=question)}
             ],
             temperature=0.7,
             max_tokens=4000,

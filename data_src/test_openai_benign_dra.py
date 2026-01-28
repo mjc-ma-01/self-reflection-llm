@@ -64,7 +64,7 @@ def generate_single_entry(q):
 
 def generate_batch_data(num_entries=300, batch_size=10, delay_seconds=1):
     # 读取q
-    data_path = "/c23030/ckj/code/vlm/jailbreaking/data_src/general_data_from_alpaca/dataset.json"
+    data_path = "/data_src/general_data_from_alpaca/dataset.json"
     with open(data_path, 'r') as f:
         data = json.load(f)
     q_list = [item["query"] for item in data if item["label"] == "DRA"]

@@ -75,7 +75,9 @@ cls = AutoModelForCausalLM.from_pretrained(
 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, truncation_side="left", padding_side="left")
 log_yellow('[*] Harmbench loaded!')
 
-def predict(behaviors, generations):
+
+def predict(behaviors, generations, batch_size=4):
+    """添加分批处理，避免一次性处理所有样本"""
     inputs = []
     context = None
     for i in range(len(behaviors)):
@@ -84,21 +86,37 @@ def predict(behaviors, generations):
         else:
             inputs.append(LLAMA2_CLS_PROMPT['prompt'].format(behavior=behaviors[i], generation=generations[i]))
     
-    if not tokenizer.pad_token: tokenizer.pad_token = tokenizer.eos_token
-    encoded = tokenizer(inputs, return_tensors='pt', padding='longest')
-    with torch.no_grad():
-        output_ids = cls.generate(
-            **encoded.to(cls.device),
-            do_sample=False,
-            max_new_tokens=1,
-        ).cpu()
-        output_ids = output_ids[:, len(encoded.input_ids[0]):]
-
-    completion = tokenizer.batch_decode(output_ids, skip_special_tokens=False)
+    if not tokenizer.pad_token: 
+        tokenizer.pad_token = tokenizer.eos_token
+    
+    # 分批处理
+    all_completions = []
+    
+    for i in range(0, len(inputs), batch_size):
+        batch_inputs = inputs[i:i+batch_size]
+        
+        encoded = tokenizer(batch_inputs, return_tensors='pt', padding='longest')
+        
+        with torch.no_grad():
+            output_ids = cls.generate(
+                **encoded.to(cls.device),
+                do_sample=False,
+                max_new_tokens=1,
+            ).cpu()
+        
+        # 注意：每个batch的input长度可能不同
+        batch_completion = []
+        for j in range(len(batch_inputs)):
+            single_output = output_ids[j, encoded.input_ids[j].shape[0]:]
+            decoded = tokenizer.decode(single_output, skip_special_tokens=False)
+            batch_completion.append(decoded)
+        
+        all_completions.extend(batch_completion)
+    
+    # 处理结果
     res = []
-    # breakpoint()
-    for k in completion:
-        if k == 'Yes':
+    for k in all_completions:
+        if k.strip() == 'Yes':  # 添加strip()处理可能的空格
             res.append(True)
         else:
             res.append(False)

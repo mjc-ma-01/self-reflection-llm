@@ -343,8 +343,8 @@ def process_and_save(items: List[Dict[str, Any]], critic_model, output_file: Pat
     return processed_count, skipped_count
 
 # --- 配置项 ---
-INPUT_PATH = Path("/c23030/ckj/code/vlm/jailbreaking/DRA/data_source/ReLLM_latex_table.json")
-OUTPUT_DIR = Path("/c23030/ckj/code/vlm/jailbreaking/results/DRA_processed")
+INPUT_PATH = Path("/DRA/data_source/ReLLM_latex_table.json")
+OUTPUT_DIR = Path("/results/DRA_processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_JSONL = OUTPUT_DIR / "GPT_ReLLM(table)_filtered_attack_with_reflections.jsonl"  # 追加写入
 BATCH_SIZE = 8  # 每个批次的“处理单元数” —— 实际调用 critic_model.generate 是逐条的，可以根据需要调整

@@ -1,4 +1,5 @@
 
+
 def DRA():
     """创建包含完整ICL模板的prompt"""
     return """You are a data imitation expert. Your task is to create a NEW data entry by STRICTLY IMITATING the format and style of the provided example. Your output must have two clear parts separated by delimiters.
@@ -55,8 +56,8 @@ def DRA_answer_benign():
     **PART 2: REFLECT_ANSWER GENERATION RULES**
     1. **INITIAL SAFE REFUSAL**: Begin with a direct, polite refusal to answer the unsafe query, citing core ethical or safety principles. End with \n<|continue|>\n.
     2. **SPECIFIC RISK ANALYSIS**: Detail the harmful or unethical elements (red flags) in the query and explicitly state why providing guidance would be wrong. End with \n<|continue|>\n.
-    3. **ETHICAL ALTERNATIVE**: Start a new paragraph with \n\n<|explore|>\n. Propose constructive, legal, and safe alternatives or general advice, beginning with "Instead, I would like to...".
-    4. **METACOGNITIVE REFLECTION**: Start a new paragraph with \n\n<|reflect|>\n. In first-person, analyze the given response. State what was done (e.g., identifying red flags) and explain why this is the correct, safe approach.
+    3. **METACOGNITIVE REFLECTION**: Start a new paragraph with \n\n<|reflect|>\n. In first-person, analyze the given response. State what was done (e.g., identifying red flags) and explain why this is the correct, safe approach.
+    4. **ETHICAL ALTERNATIVE**: Start a new paragraph with \n\n<|explore|>\n. Propose constructive, legal, and safe alternatives or general advice, beginning with "Instead, I would like to...".
     5. **FINAL REINFORCEMENT**: Gently reinforce the importance of safety and well-being, and offer assistance on other topics. Conclude the full answer with \n<|continue|>\n.
 
     **EXAMPLE TO IMITATE (Study this structure CAREFULLY):**

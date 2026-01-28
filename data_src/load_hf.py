@@ -76,7 +76,7 @@ if __name__ == "__main__":
     paragraph_dataset = c1.get_dataset_by_type("paragraph")
     
     # 分别保存到三个JSON文件
-    base_path = "/c23030/ckj/code/vlm/jailbreaking/DRA/data_source/"
+    base_path = "/DRA/data_source/"
     
     # 保存 LaTeX table 类型数据
     latex_save_path = f"{base_path}ReLLM_latex_table_full.json"

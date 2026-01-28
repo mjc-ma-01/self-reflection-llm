@@ -397,8 +397,8 @@ def process_and_save(items: List[Dict[str, Any]], critic_model, output_file: Pat
 
 
 # --- 配置项 ---
-INPUT_PATH = Path("/c23030/ckj/code/vlm/jailbreaking/DRA/results/attack/batch_llama2_13b_0_120_result.json")
-OUTPUT_DIR = Path("/c23030/ckj/code/vlm/jailbreaking/results/DRA_processed")
+INPUT_PATH = Path("/DRA/results/attack/batch_llama2_13b_0_120_result.json")
+OUTPUT_DIR = Path("/results/DRA_processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_JSONL = OUTPUT_DIR / "filtered_attack_with_reflections_benign.jsonl"  # 追加写入
 BATCH_SIZE = 4  # 每个批次的“处理单元数” —— 实际调用 critic_model.generate 是逐条的，可以根据需要调整
