@@ -1,0 +1,8 @@
+{
+  "total_data": 500,
+  "successfully_evaluated": 500,
+  "failed_evaluations": 0,
+  "failed_indices": [],
+  "consistent_answers": 413,
+  "consistency_rate": 0.826
+}
