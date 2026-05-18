@@ -78,11 +78,7 @@ if __name__ == "__main__":
     paragraph_dataset = c1.get_dataset_by_type("paragraph")
     
     # 分别保存到三个JSON文件
-<<<<<<< HEAD:data_src/load_hf.py
-    base_path = "/DRA/data_source/"
-=======
     base_path = PROJECT_ROOT / "DRA" / "data_source"
->>>>>>> bed9ec8 (update):src/self_reflection_llm/data_src/load_hf.py
     
     # 保存 LaTeX table 类型数据
     latex_save_path = base_path / "ReLLM_latex_table_full.json"

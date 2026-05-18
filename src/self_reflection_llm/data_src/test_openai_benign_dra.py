@@ -66,11 +66,7 @@ def generate_single_entry(q):
 
 def generate_batch_data(num_entries=300, batch_size=10, delay_seconds=1):
     # 读取q
-<<<<<<< HEAD:data_src/test_openai_benign_dra.py
-    data_path = "/data_src/general_data_from_alpaca/dataset.json"
-=======
     data_path = DATA_SRC_DIR / "dataset.json"
->>>>>>> bed9ec8 (update):src/self_reflection_llm/data_src/test_openai_benign_dra.py
     with open(data_path, 'r') as f:
         data = json.load(f)
     q_list = [item["query"] for item in data if item["label"] == "DRA"]
