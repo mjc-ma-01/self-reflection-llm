@@ -1,0 +1,4 @@
+datasets
+pyarrow
+torch
+transformers
