@@ -1,6 +1,6 @@
-# ReSAM Framework (Anonymous)
+<!-- # ReSAM Framework (Anonymous)
 
-This repository contains the anonymized implementation of the ReSAM framework used in our paper for reflective data generation, supervised fine-tuning, and post-training safety evaluation.
+This repository contains the anonymized implementation of the ReSAM framework used in our paper for reflective data generation, supervised fine-tuning, and post-training safety evaluation. -->
 
 > This repository is anonymized for double-blind review.
 
@@ -20,7 +20,7 @@ In other words, this README keeps the original logical structure, but the docume
 
 ---
 
-## Project Structure
+<!-- ## Project Structure
 
 ```text
 .
@@ -75,7 +75,7 @@ In other words, this README keeps the original logical structure, but the docume
         └── results/
             └── DRA_processed/
                 └── add_tag.py
-```
+``` -->
 
 ---
 
