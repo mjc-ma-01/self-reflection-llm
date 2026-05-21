@@ -4,6 +4,11 @@
   "ready_output": "data/sft",
   "train_file": "data/sft/train.jsonl",
   "test_file": "data/sft/test.jsonl",
+  "source_output": "data/sft/source",
+  "source_files": {
+    "harmful": "data/sft/source/harmful_pattern.json",
+    "general": "data/sft/source/general_pattern.json"
+  },
   "sources": [
     {"data_source": "sft_rellm_code", "path": "results/DRA_processed/GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl", "ability": "safety"},
     {"data_source": "sft_rellm_paragraph", "path": "results/DRA_processed/GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl", "ability": "safety"},

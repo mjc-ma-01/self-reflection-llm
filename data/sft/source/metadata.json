@@ -1,0 +1,69 @@
+{
+  "description": "SFT source data before train/test split, grouped by ReflectDataset mixture logic.",
+  "harmful_records": 1600,
+  "general_records": 600,
+  "harmful_sources": [
+    {
+      "data_source": "sft_rellm_code",
+      "path": "results/DRA_processed/GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_rellm_paragraph",
+      "path": "results/DRA_processed/GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_rellm_table",
+      "path": "results/DRA_processed/GPT_ReLLM(table)440_filtered_attack_with_reflections.jsonl",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_dra_safe_imitation",
+      "path": "data/source/DRA_safe_imitation_data_1k_complete.json",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_drattack_safe_imitation",
+      "path": "data/source/DrAttack_safe_imitation_data_500_complete.json",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_drattack_benign_imitation",
+      "path": "data/source/DrAttack(benign)_safe_imitation_data_300_complete.json",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_dra_benign_imitation",
+      "path": "data/source/DRA(benign)_safe_imitation_data_200_complete.json",
+      "ability": "safety",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_gpt_wrong_correct",
+      "path": "data/source/GPT_reflect/wrong-correct.json",
+      "ability": "safety",
+      "limit": 200
+    }
+  ],
+  "general_sources": [
+    {
+      "data_source": "sft_gpt_correct_correct",
+      "path": "data/source/GPT_reflect/correct-correct.json",
+      "ability": "general",
+      "limit": 200
+    },
+    {
+      "data_source": "sft_alpaca_eval",
+      "path": "data/source/alpaca_eval.json",
+      "ability": "general",
+      "limit": 400
+    }
+  ]
+}

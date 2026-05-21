@@ -69,11 +69,12 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 
 - `data/sft/train.jsonl` and `data/sft/test.jsonl` are the prepared SFT files.
 - `data/sft/manifest.json` records the source files used to produce them.
+- `data/sft/source/harmful_pattern.json` and
+  `data/sft/source/general_pattern.json` are the SFT source data before
+  train/test split, grouped with the local `mixture.py` rules.
 - `data/source/` contains released auxiliary source assets.
-- `data/rl/harmful_pattern.json` is rebuilt from the eight local ReflectDataset
-  harmful sources in `mixture.py`, taking 200 rows per source.
-- `data/rl/general_pattern.json` contains the remaining local general mixture:
-  200 `GPT_reflect/correct-correct` rows and 400 `alpaca_eval` rows.
+- `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are the RL
+  prompt sets.
 - Generated JSONL/parquet artifacts are written under `data/processed/`.
 
 ## Stage 1: SFT
@@ -97,8 +98,14 @@ Run all three generation stages:
 OPENAI_API_KEY=<key> \
 OPENAI_MODEL=gpt-5 \
 PROMPT_PRESET=dra \
-INPUT_FILE=data/rl/harmful_pattern.json \
+INPUT_FILE=data/sft/source/harmful_pattern.json \
 bash scripts/sft/prepare_data.sh
+```
+
+Rebuild SFT source data from the local `mixture.py` inputs:
+
+```bash
+bash scripts/sft/build_source_data.sh
 ```
 
 Available `PROMPT_PRESET` values are `dra`, `drattack`,
@@ -115,7 +122,7 @@ The stage modules can also be run independently:
 
 ```bash
 PYTHONPATH=src python -m self_reflection_llm.generation.trajectory_initialization \
-  --input_file data/rl/harmful_pattern.json \
+  --input_file data/sft/source/harmful_pattern.json \
   --output_file data/processed/reflector_generation/ti.jsonl
 
 PYTHONPATH=src python -m self_reflection_llm.generation.teacher_guided_reflection \
@@ -160,13 +167,6 @@ Install the lightweight RL preparation dependencies:
 
 ```bash
 pip install -r requirements-rl.txt
-```
-
-Rebuild the merged RL pattern files from `data/source/` whenever source data is
-changed:
-
-```bash
-bash scripts/rl/build_patterns_from_source.sh
 ```
 
 Prepare RL train/test parquet files and validation parquet files:

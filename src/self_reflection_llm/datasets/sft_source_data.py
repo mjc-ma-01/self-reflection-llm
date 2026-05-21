@@ -1,4 +1,9 @@
-"""Build RL harmful/general pattern files from the SFT mixture sources."""
+"""Build SFT source pattern files before the train/test split.
+
+The source grouping follows ``mixture.py``:
+- the eight requested ReflectDataset-style files are grouped as harmful/safety;
+- the remaining local general mixture uses correct-correct plus alpaca_eval.
+"""
 
 from __future__ import annotations
 
@@ -9,12 +14,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from self_reflection_llm.paths import (
-    DATA_SRC_DIR,
-    DRA_PROCESSED_DIR,
-    PROJECT_ROOT,
-    RL_DATA_DIR,
-)
+from self_reflection_llm.paths import DATA_SRC_DIR, DRA_PROCESSED_DIR, PROJECT_ROOT
+
+
+SFT_SOURCE_DIR = PROJECT_ROOT / "data" / "sft" / "source"
 
 
 @dataclass(frozen=True)
@@ -25,7 +28,7 @@ class SourceSpec:
     limit: int
 
 
-HARMFUL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
+HARMFUL_SOURCES: tuple[SourceSpec, ...] = (
     SourceSpec(
         "sft_rellm_code",
         DRA_PROCESSED_DIR / "GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
@@ -76,8 +79,7 @@ HARMFUL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
 )
 
-
-GENERAL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
+GENERAL_SOURCES: tuple[SourceSpec, ...] = (
     SourceSpec(
         "sft_gpt_correct_correct",
         DATA_SRC_DIR / "GPT_reflect" / "correct-correct.json",
@@ -88,16 +90,7 @@ GENERAL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
 )
 
 QUERY_KEYS = ("query", "question", "instruction", "prompt", "text_query")
-LABEL_KEYS = (
-    "reflect_answer",
-    "output",
-    "answer",
-    "response",
-    "label",
-    "level",
-    "dataset",
-    "generator",
-)
+LABEL_KEYS = ("reflect_answer", "output", "answer", "response", "label")
 
 
 def _repo_display_path(path: Path) -> str:
@@ -126,7 +119,7 @@ def _load_records(path: Path) -> list[dict[str, Any]]:
     return [item for item in data if isinstance(item, dict)]
 
 
-def _first_text(item: dict[str, Any], keys: Iterable[str]) -> tuple[str, str] | tuple[None, None]:
+def _first_text(item: dict[str, Any], keys: Iterable[str]) -> tuple[str | None, str | None]:
     for key in keys:
         value = item.get(key)
         if isinstance(value, str) and value.strip():
@@ -135,13 +128,11 @@ def _first_text(item: dict[str, Any], keys: Iterable[str]) -> tuple[str, str] | 
 
 
 def _insert_continue_tokens(text: str) -> str:
-    if not text or not text.strip():
+    text = text.strip()
+    if not text:
         return text
-    sentences = re.split(r"(?<=[.!?])\s+", text.strip(), maxsplit=1)
-    if len(sentences) == 1:
-        first_part, rest_part = sentences[0], ""
-    else:
-        first_part, rest_part = sentences
+    sentences = re.split(r"(?<=[.!?])\s+", text, maxsplit=1)
+    first_part, rest_part = (sentences[0], "") if len(sentences) == 1 else sentences
     first_part = first_part + "\n<|continue|>\n"
     if not rest_part:
         return first_part
@@ -154,42 +145,38 @@ def _insert_continue_tokens(text: str) -> str:
     return first_part + new_rest
 
 
-def _pattern_record(spec: SourceSpec, item: dict[str, Any], source_idx: int) -> dict[str, Any] | None:
+def _record(spec: SourceSpec, item: dict[str, Any], source_idx: int) -> dict[str, Any] | None:
     input_field, query = _first_text(item, QUERY_KEYS)
-    if not query:
-        return None
     _, label = _first_text(item, LABEL_KEYS)
-    if spec.data_source == "sft_alpaca_eval" and label:
+    if not query or not label:
+        return None
+    if spec.data_source == "sft_alpaca_eval":
         label = _insert_continue_tokens(label)
-    expected_behavior = "refuse" if spec.ability == "safety" else "answer"
     return {
         "query": query,
-        "label": label or spec.data_source,
+        "label": label,
         "data_source": spec.data_source,
         "ability": spec.ability,
-        "prompt_type": "harmful" if spec.ability == "safety" else "general",
-        "expected_behavior": expected_behavior,
         "source_file": _repo_display_path(spec.path),
         "source_idx": source_idx,
         "input_field": input_field,
     }
 
 
-def build_patterns(limit_per_source: int = -1) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    general: list[dict[str, Any]] = []
+def build_source_data(limit_per_source: int = -1) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     harmful: list[dict[str, Any]] = []
-    for spec in (*HARMFUL_SOURCE_SPECS, *GENERAL_SOURCE_SPECS):
+    general: list[dict[str, Any]] = []
+    for spec, target in [(spec, harmful) for spec in HARMFUL_SOURCES] + [(spec, general) for spec in GENERAL_SOURCES]:
         if not spec.path.exists():
             raise FileNotFoundError(spec.path)
-        target = harmful if spec.ability == "safety" else general
         effective_limit = spec.limit if limit_per_source < 0 else min(spec.limit, limit_per_source)
         for source_idx, item in enumerate(_load_records(spec.path)):
             if source_idx >= effective_limit:
                 break
-            record = _pattern_record(spec, item, source_idx)
+            record = _record(spec, item, source_idx)
             if record:
                 target.append(record)
-    return general, harmful
+    return harmful, general
 
 
 def _write_json(rows: list[dict[str, Any]], path: Path) -> None:
@@ -199,19 +186,28 @@ def _write_json(rows: list[dict[str, Any]], path: Path) -> None:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--general_output", type=Path, default=RL_DATA_DIR / "general_pattern.json")
-    parser.add_argument("--harmful_output", type=Path, default=RL_DATA_DIR / "harmful_pattern.json")
+    parser.add_argument("--output_dir", type=Path, default=SFT_SOURCE_DIR)
     parser.add_argument("--limit_per_source", type=int, default=-1)
     return parser
 
 
 def main() -> None:
     args = build_arg_parser().parse_args()
-    general, harmful = build_patterns(limit_per_source=args.limit_per_source)
-    _write_json(general, args.general_output.expanduser())
-    _write_json(harmful, args.harmful_output.expanduser())
-    print(f"Wrote {args.general_output} ({len(general)} rows)")
-    print(f"Wrote {args.harmful_output} ({len(harmful)} rows)")
+    output_dir = args.output_dir.expanduser()
+    harmful, general = build_source_data(limit_per_source=args.limit_per_source)
+    _write_json(harmful, output_dir / "harmful_pattern.json")
+    _write_json(general, output_dir / "general_pattern.json")
+    metadata = {
+        "description": "SFT source data before train/test split, grouped by ReflectDataset mixture logic.",
+        "harmful_records": len(harmful),
+        "general_records": len(general),
+        "harmful_sources": [spec.__dict__ | {"path": _repo_display_path(spec.path)} for spec in HARMFUL_SOURCES],
+        "general_sources": [spec.__dict__ | {"path": _repo_display_path(spec.path)} for spec in GENERAL_SOURCES],
+    }
+    _write_json(metadata, output_dir / "metadata.json")
+    print(f"Wrote {output_dir / 'harmful_pattern.json'} ({len(harmful)} rows)")
+    print(f"Wrote {output_dir / 'general_pattern.json'} ({len(general)} rows)")
+    print(f"Wrote {output_dir / 'metadata.json'}")
 
 
 if __name__ == "__main__":

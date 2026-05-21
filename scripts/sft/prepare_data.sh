@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python}"
-INPUT_FILE="${INPUT_FILE:-${ROOT}/data/rl/harmful_pattern.json}"
+INPUT_FILE="${INPUT_FILE:-${ROOT}/data/sft/source/harmful_pattern.json}"
 OUTPUT_DIR="${OUTPUT_DIR:-${ROOT}/data/processed/reflector_generation}"
 LIMIT="${LIMIT:--1}"
 SEED="${SEED:-42}"
