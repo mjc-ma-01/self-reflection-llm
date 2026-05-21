@@ -70,8 +70,9 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 - `data/sft/train.jsonl` and `data/sft/test.jsonl` are the prepared SFT files.
 - `data/sft/manifest.json` records the source files used to produce them.
 - `data/source/` contains released auxiliary source assets.
-- `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are the
-  default prompt sets for RL internalization.
+- `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are merged
+  from `data/source/` by source-level `ability` and are the default prompt sets
+  for RL internalization.
 - Generated JSONL/parquet artifacts are written under `data/processed/`.
 
 ## Stage 1: SFT
@@ -158,6 +159,13 @@ Install the lightweight RL preparation dependencies:
 
 ```bash
 pip install -r requirements-rl.txt
+```
+
+Rebuild the merged RL pattern files from `data/source/` whenever source data is
+changed:
+
+```bash
+bash scripts/rl/build_patterns_from_source.sh
 ```
 
 Prepare RL train/test parquet files and validation parquet files:

@@ -1,0 +1,132 @@
+"""Build RL harmful/general pattern files from local source data."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable
+
+from self_reflection_llm.paths import DATA_SRC_DIR, PROJECT_ROOT, RL_DATA_DIR
+
+
+@dataclass(frozen=True)
+class SourceSpec:
+    data_source: str
+    path: Path
+    ability: str
+
+
+SOURCE_SPECS: tuple[SourceSpec, ...] = (
+    SourceSpec("sft_dra_safe_imitation", DATA_SRC_DIR / "DRA_safe_imitation_data_1k_complete.json", "safety"),
+    SourceSpec("sft_drattack_safe_imitation", DATA_SRC_DIR / "DrAttack_safe_imitation_data_500_complete.json", "safety"),
+    SourceSpec("sft_drattack_benign_imitation", DATA_SRC_DIR / "DrAttack(benign)_safe_imitation_data_300_complete.json", "general"),
+    SourceSpec("sft_dra_benign_imitation", DATA_SRC_DIR / "DRA(benign)_safe_imitation_data_200_complete.json", "general"),
+    SourceSpec("sft_gpt_wrong_correct", DATA_SRC_DIR / "GPT_reflect" / "wrong-correct.json", "safety"),
+    SourceSpec("sft_gpt_correct_correct", DATA_SRC_DIR / "GPT_reflect" / "correct-correct.json", "general"),
+    SourceSpec("sft_harm_refuse", DATA_SRC_DIR / "harm_refuse_gptgenerate.json", "safety"),
+    SourceSpec("sft_harm_wrong_refuse", DATA_SRC_DIR / "harm_wrong_refuse_gptgenerate.json", "safety"),
+    SourceSpec("sft_alpaca_eval", DATA_SRC_DIR / "alpaca_eval.json", "general"),
+    SourceSpec("source_drattack_general_query", DATA_SRC_DIR / "DrAttack_general_query_imitation_data_300.json", "general"),
+    SourceSpec("source_general_dataset", DATA_SRC_DIR / "dataset.json", "general"),
+    SourceSpec("source_safework_r1", DATA_SRC_DIR / "safework_r1.jsonl", "safety"),
+)
+
+QUERY_KEYS = ("query", "question", "instruction", "prompt", "text_query")
+LABEL_KEYS = ("label", "level", "dataset", "generator")
+
+
+def _repo_display_path(path: Path) -> str:
+    resolved = path.expanduser().resolve()
+    try:
+        return str(resolved.relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _load_records(path: Path) -> list[dict[str, Any]]:
+    if path.suffix == ".jsonl":
+        rows: list[dict[str, Any]] = []
+        with path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    item = json.loads(line)
+                    if isinstance(item, dict):
+                        rows.append(item)
+        return rows
+    with path.open("r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, list):
+        raise ValueError(f"expected a JSON list in {path}")
+    return [item for item in data if isinstance(item, dict)]
+
+
+def _first_text(item: dict[str, Any], keys: Iterable[str]) -> tuple[str, str] | tuple[None, None]:
+    for key in keys:
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return key, value.strip()
+    return None, None
+
+
+def _pattern_record(spec: SourceSpec, item: dict[str, Any], source_idx: int) -> dict[str, Any] | None:
+    input_field, query = _first_text(item, QUERY_KEYS)
+    if not query:
+        return None
+    _, label = _first_text(item, LABEL_KEYS)
+    expected_behavior = "refuse" if spec.ability == "safety" else "answer"
+    return {
+        "query": query,
+        "label": label or spec.data_source,
+        "data_source": spec.data_source,
+        "ability": spec.ability,
+        "prompt_type": "harmful" if spec.ability == "safety" else "general",
+        "expected_behavior": expected_behavior,
+        "source_file": _repo_display_path(spec.path),
+        "source_idx": source_idx,
+        "input_field": input_field,
+    }
+
+
+def build_patterns(limit_per_source: int = -1) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    general: list[dict[str, Any]] = []
+    harmful: list[dict[str, Any]] = []
+    for spec in SOURCE_SPECS:
+        if not spec.path.exists():
+            raise FileNotFoundError(spec.path)
+        target = harmful if spec.ability == "safety" else general
+        for source_idx, item in enumerate(_load_records(spec.path)):
+            if limit_per_source >= 0 and source_idx >= limit_per_source:
+                break
+            record = _pattern_record(spec, item, source_idx)
+            if record:
+                target.append(record)
+    return general, harmful
+
+
+def _write_json(rows: list[dict[str, Any]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--general_output", type=Path, default=RL_DATA_DIR / "general_pattern.json")
+    parser.add_argument("--harmful_output", type=Path, default=RL_DATA_DIR / "harmful_pattern.json")
+    parser.add_argument("--limit_per_source", type=int, default=-1)
+    return parser
+
+
+def main() -> None:
+    args = build_arg_parser().parse_args()
+    general, harmful = build_patterns(limit_per_source=args.limit_per_source)
+    _write_json(general, args.general_output.expanduser())
+    _write_json(harmful, args.harmful_output.expanduser())
+    print(f"Wrote {args.general_output} ({len(general)} rows)")
+    print(f"Wrote {args.harmful_output} ({len(harmful)} rows)")
+
+
+if __name__ == "__main__":
+    main()

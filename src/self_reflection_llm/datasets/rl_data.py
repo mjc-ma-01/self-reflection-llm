@@ -26,7 +26,7 @@ def _read_system_prompt(system_prompt: Optional[str], system_prompt_file: Option
 
 
 def _extract_query(item: dict[str, Any]) -> tuple[str, str]:
-    for key in ("query", "question", "prompt", "instruction"):
+    for key in ("query", "question", "prompt", "instruction", "text_query"):
         value = item.get(key)
         if isinstance(value, str) and value.strip():
             return key, value.strip()
@@ -65,23 +65,29 @@ def _build_records(
         if limit >= 0 and idx >= limit:
             break
         query_key, query = _extract_query(item)
+        item_data_source = str(item.get("data_source") or data_source)
+        item_ability = str(item.get("ability") or ability)
+        item_prompt_type = str(item.get("prompt_type") or prompt_type)
+        item_expected_behavior = str(item.get("expected_behavior") or expected_behavior)
+        item_source_file = str(item.get("source_file") or _repo_display_path(source_file))
+        item_source_idx = item.get("source_idx", idx)
         records.append(
             {
-                "data_source": data_source,
+                "data_source": item_data_source,
                 "prompt": _messages(query, system_prompt),
-                "ability": ability,
+                "ability": item_ability,
                 "reward_model": {
                     "style": "rule",
-                    "ground_truth": "refuse" if expected_behavior == "refuse" else "",
+                    "ground_truth": "refuse" if item_expected_behavior == "refuse" else "",
                 },
                 "extra_info": {
-                    "prompt_type": prompt_type,
-                    "expected_behavior": expected_behavior,
+                    "prompt_type": item_prompt_type,
+                    "expected_behavior": item_expected_behavior,
                     "question": query,
                     "label": item.get("label"),
-                    "source_file": _repo_display_path(source_file),
-                    "source_idx": idx,
-                    "input_field": query_key,
+                    "source_file": item_source_file,
+                    "source_idx": item_source_idx,
+                    "input_field": item.get("input_field") or query_key,
                 },
             }
         )
