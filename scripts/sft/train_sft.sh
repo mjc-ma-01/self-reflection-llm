@@ -13,8 +13,10 @@ export TOKENIZERS_PARALLELISM=false
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}src"
 model_name=${MODEL_NAME:-llama_8b}
 model_path=${MODEL_PATH:-meta-llama/Llama-3.1-8B-Instruct}
+sft_train_file=${SFT_TRAIN_FILE:-data/sft/ready/train.jsonl}
+sft_eval_file=${SFT_EVAL_FILE:-data/sft/ready/test.jsonl}
 
-train_task_names=${TRAIN_TASK_NAMES:-reflect_cot_1k_w400benign_400harm_600math_400help_lr5e-6_epoch5_warmup0.05}
+train_task_names=${TRAIN_TASK_NAMES:-reflector_sft_ready_local_lr5e-6_epoch5_warmup0.05}
 output_root=${OUTPUT_ROOT:-outputs/reflect_models}
 base_dir=${output_root}/model:sft_mllm_${model_name}/train:${train_task_names}
 
@@ -22,12 +24,16 @@ echo "training..."
 echo "run_name: $base_dir"
 mkdir -p "${base_dir}"
 
-per_device_bs=1  # 8B模型，每卡2个样本
-grad_accum_steps=4  # 累计步数减少
-total_samples=2800
+per_device_bs=${PER_DEVICE_TRAIN_BATCH_SIZE:-1}
+grad_accum_steps=${GRADIENT_ACCUMULATION_STEPS:-4}
+if [[ -f "${sft_train_file}" ]]; then
+  total_samples=${TOTAL_SAMPLES:-$(wc -l < "${sft_train_file}")}
+else
+  total_samples=${TOTAL_SAMPLES:-2800}
+fi
 batch_size=$((per_device_bs * grad_accum_steps * ngpu))
-steps_per_epoch=$((total_samples / batch_size))
-total_training_steps=$((steps_per_epoch * 5))  # 15个epoch
+steps_per_epoch=$(( (total_samples + batch_size - 1) / batch_size ))
+total_training_steps=$((steps_per_epoch * 5))
 
 echo "Effective batch size: $batch_size"
 echo "Steps per epoch: $steps_per_epoch"
@@ -37,6 +43,8 @@ echo "Total training steps: $total_training_steps"
 accelerate launch --config_file "${config_file}" --num_processes "${ngpu}" --main_process_port $(( RANDOM % 1000 + 30000 )) \
     -m self_reflection_llm.training.sft \
     --model_path "${model_path}" \
+    --train_file "${sft_train_file}" \
+    --eval_file "${sft_eval_file}" \
     --output_dir "${base_dir}" \
     --num_train_epochs 5 \
     --per_device_train_batch_size=${per_device_bs} \

@@ -32,7 +32,10 @@ flow is therefore split into two modules.
 ├── config/
 │   └── deepspeed_zero2.yaml
 ├── data/
-│   ├── source/                  # released source and SFT data assets
+│   ├── source/                  # released source assets used to rebuild SFT
+│   ├── sft/
+│   │   ├── raw/                 # manifest for optional SFT data reproduction
+│   │   └── ready/               # main-line SFT train/test JSONL
 │   ├── rl/                      # released RL prompt data
 │   └── processed/               # generated train/eval artifacts, gitignored
 ├── docs/
@@ -45,6 +48,7 @@ flow is therefore split into two modules.
 │   ├── analysis/
 │   ├── sft/
 │   │   ├── prepare_data.sh
+│   │   ├── reproduce_data.sh
 │   │   ├── train_sft.sh
 │   │   └── validate_sft.sh
 │   └── rl/
@@ -53,7 +57,7 @@ flow is therefore split into two modules.
 │       ├── validate_rl.sh
 │       └── workflow.sh
 └── src/self_reflection_llm/
-    ├── datasets/                # SFT mixtures and RL/eval parquet builders
+    ├── datasets/                # SFT JSONL and RL/eval parquet builders
     ├── evaluation/              # answer generation, harmfulness scoring, judges
     ├── generation/              # reflection-data generation utilities
     ├── hub/                     # Hugging Face Hub utilities
@@ -66,36 +70,20 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 
 ## Data Assets
 
-- `data/source/` contains released reflective source data, benign/safety
-  imitation data, and auxiliary generation inputs.
-- `results/DRA_processed/` contains reflection JSONL files consumed by the SFT
-  mixture.
+- `data/sft/ready/train.jsonl` and `data/sft/ready/test.jsonl` are the
+  ready-to-train SFT files used by the main SFT path.
+- `data/sft/raw/manifest.json` documents the released local sources used to
+  rebuild the ready SFT files.
+- `data/source/` and `results/DRA_processed/` contain released raw/source and
+  teacher-reflection assets for optional SFT data reproduction.
 - `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are the
   default prompt sets for RL internalization.
 - Generated JSONL/parquet artifacts are written under `data/processed/`.
 
 ## Stage 1: SFT
 
-Prepare the SFT train/test JSONL files and metadata:
-
-```bash
-bash scripts/sft/prepare_data.sh
-```
-
-This runs:
-
-```bash
-PYTHONPATH=src python -m self_reflection_llm.datasets.sft_data \
-  --output_dir data/processed/reflector_sft
-```
-
-The SFT dataset is implemented in
-`src/self_reflection_llm/datasets/mixture.py` and combines:
-
-- processed reflective safety data from `results/DRA_processed/`
-- released source data from `data/source/`
-- math reasoning data from Hugging Face
-- benign instruction-following data from Hugging Face
+The main SFT path is intentionally direct: train from the released ready JSONL
+files under `data/sft/ready/`.
 
 Train the SFT model:
 
@@ -111,13 +99,41 @@ The underlying module is:
 PYTHONPATH=src accelerate launch \
   --config_file config/deepspeed_zero2.yaml \
   -m self_reflection_llm.training.sft \
-  --model_path <base-model-or-checkpoint>
+  --model_path <base-model-or-checkpoint> \
+  --train_file data/sft/ready/train.jsonl \
+  --eval_file data/sft/ready/test.jsonl
+```
+
+The ready SFT schema mirrors the RL data organization where useful:
+`data_source`, chat-style `prompt`, target `response`, `ability`, and
+`extra_info`. It also keeps `question` and `label` aliases for older SFT code.
+
+Optional SFT data reproduction:
+
+```bash
+bash scripts/sft/reproduce_data.sh
+```
+
+This rebuilds `data/sft/ready/` from local released sources listed in
+`data/sft/raw/manifest.json`: processed teacher-reflection files,
+benign/safety imitation data, GPT-reflection data, and the local Alpaca Eval
+export. To also reproduce the old online math mixture:
+
+```bash
+INCLUDE_HF_MATH=1 bash scripts/sft/reproduce_data.sh
+```
+
+The direct module command is:
+
+```bash
+PYTHONPATH=src python -m self_reflection_llm.datasets.sft_data \
+  --output_dir data/sft/ready
 ```
 
 Validate an SFT checkpoint by generating answers and running post-hoc scoring:
 
 ```bash
-MODEL_PATH=outputs/reflector_sft/checkpoint-best \
+MODEL_PATH=<sft-output>/checkpoint-best \
 EVAL_DATASETS="strongreject xstest gsm8k" \
 bash scripts/sft/validate_sft.sh
 ```
@@ -225,7 +241,7 @@ export OPENAI_BASE_URL=...
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m compileall -q src scripts tests
-bash -n scripts/sft/prepare_data.sh scripts/sft/train_sft.sh scripts/sft/validate_sft.sh
+bash -n scripts/sft/prepare_data.sh scripts/sft/reproduce_data.sh scripts/sft/train_sft.sh scripts/sft/validate_sft.sh
 bash -n scripts/rl/workflow.sh scripts/rl/run_gdpo.sh scripts/rl/validate_rl.sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m pytest tests/test_rl_reward.py
 ```
