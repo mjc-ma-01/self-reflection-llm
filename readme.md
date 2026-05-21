@@ -32,10 +32,7 @@ flow is therefore split into two modules.
 ├── config/
 │   └── deepspeed_zero2.yaml
 ├── data/
-│   ├── source/                  # released source assets used to rebuild SFT
-│   ├── sft/
-│   │   ├── raw/                 # manifest for optional SFT data reproduction
-│   │   └── ready/               # main-line SFT train/test JSONL
+│   ├── source/                  # released source assets
 │   ├── rl/                      # released RL prompt data
 │   └── processed/               # generated train/eval artifacts, gitignored
 ├── docs/
@@ -48,7 +45,6 @@ flow is therefore split into two modules.
 │   ├── analysis/
 │   ├── sft/
 │   │   ├── prepare_data.sh
-│   │   ├── reproduce_data.sh
 │   │   ├── train_sft.sh
 │   │   └── validate_sft.sh
 │   └── rl/
@@ -57,9 +53,9 @@ flow is therefore split into two modules.
 │       ├── validate_rl.sh
 │       └── workflow.sh
 └── src/self_reflection_llm/
-    ├── datasets/                # SFT JSONL and RL/eval parquet builders
+    ├── datasets/                # RL/eval parquet builders and legacy loaders
     ├── evaluation/              # answer generation, harmfulness scoring, judges
-    ├── generation/              # reflection-data generation utilities
+    ├── generation/              # TI/TGR/RTC reflection-data generation
     ├── hub/                     # Hugging Face Hub utilities
     ├── rl/                      # segmented reward and GDPO helpers
     ├── training/                # SFT entry points
@@ -70,20 +66,57 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 
 ## Data Assets
 
-- `data/sft/ready/train.jsonl` and `data/sft/ready/test.jsonl` are the
-  ready-to-train SFT files used by the main SFT path.
-- `data/sft/raw/manifest.json` documents the released local sources used to
-  rebuild the ready SFT files.
-- `data/source/` and `results/DRA_processed/` contain released raw/source and
-  teacher-reflection assets for optional SFT data reproduction.
+- SFT source/ready artifacts were moved outside the repository to
+  `/mnt/shared-storage-user/majiachen/sft_source/` so repository `prepare`
+  refers only to reflection-data generation.
+- `data/source/` contains released auxiliary source assets.
 - `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are the
   default prompt sets for RL internalization.
 - Generated JSONL/parquet artifacts are written under `data/processed/`.
 
 ## Stage 1: SFT
 
-The main SFT path is intentionally direct: train from the released ready JSONL
-files under `data/sft/ready/`.
+In this repository, **prepare means generating reflection trajectories**, not
+merging already marked files into an SFT dataset. The generation pipeline
+follows Appendix B of the paper:
+
+1. **TI: Trajectory Initialization** creates a target-policy trajectory and a
+   truncated prefix `y_before` for each query.
+2. **TGR: Teacher-Guided Reflection Generation** asks GPT-5 for
+   `z_reflect` and `z_explore` from `(x, y_before)`.
+3. **RTC: Reflection-Based Trajectory Construction** asks GPT-5 for the safe
+   continuation `y_after` and assembles `(y_before, z, y_after)`.
+
+Run all three generation stages:
+
+```bash
+OPENAI_API_KEY=<key> \
+OPENAI_MODEL=gpt-5 \
+INPUT_FILE=data/rl/harmful_pattern.json \
+bash scripts/sft/prepare_data.sh
+```
+
+The final generated reflection trajectories are written to:
+
+```text
+data/processed/reflector_generation/reflection_trajectories.jsonl
+```
+
+The stage modules can also be run independently:
+
+```bash
+PYTHONPATH=src python -m self_reflection_llm.generation.trajectory_initialization \
+  --input_file data/rl/harmful_pattern.json \
+  --output_file data/processed/reflector_generation/ti.jsonl
+
+PYTHONPATH=src python -m self_reflection_llm.generation.teacher_guided_reflection \
+  --input_file data/processed/reflector_generation/ti.jsonl \
+  --output_file data/processed/reflector_generation/tgr.jsonl
+
+PYTHONPATH=src python -m self_reflection_llm.generation.reflection_trajectory_construction \
+  --input_file data/processed/reflector_generation/tgr.jsonl \
+  --output_file data/processed/reflector_generation/reflection_trajectories.jsonl
+```
 
 Train the SFT model:
 
@@ -100,34 +133,8 @@ PYTHONPATH=src accelerate launch \
   --config_file config/deepspeed_zero2.yaml \
   -m self_reflection_llm.training.sft \
   --model_path <base-model-or-checkpoint> \
-  --train_file data/sft/ready/train.jsonl \
-  --eval_file data/sft/ready/test.jsonl
-```
-
-The ready SFT schema mirrors the RL data organization where useful:
-`data_source`, chat-style `prompt`, target `response`, `ability`, and
-`extra_info`. It also keeps `question` and `label` aliases for older SFT code.
-
-Optional SFT data reproduction:
-
-```bash
-bash scripts/sft/reproduce_data.sh
-```
-
-This rebuilds `data/sft/ready/` from local released sources listed in
-`data/sft/raw/manifest.json`: processed teacher-reflection files,
-benign/safety imitation data, GPT-reflection data, and the local Alpaca Eval
-export. To also reproduce the old online math mixture:
-
-```bash
-INCLUDE_HF_MATH=1 bash scripts/sft/reproduce_data.sh
-```
-
-The direct module command is:
-
-```bash
-PYTHONPATH=src python -m self_reflection_llm.datasets.sft_data \
-  --output_dir data/sft/ready
+  --train_file <train-jsonl> \
+  --eval_file <eval-jsonl>
 ```
 
 Validate an SFT checkpoint by generating answers and running post-hoc scoring:
@@ -194,25 +201,13 @@ overrides.
 
 ## Reflective Data Generation
 
-Generation utilities live in `src/self_reflection_llm/generation/`.
+The generation folder intentionally contains only the OpenAI query helper and
+the three paper stages:
 
-```bash
-PYTHONPATH=src python -m self_reflection_llm.generation.generate
-PYTHONPATH=src python -m self_reflection_llm.generation.generate_reflection_benign_data
-PYTHONPATH=src python -m self_reflection_llm.generation.generate_reflection_data_paragraph
-PYTHONPATH=src python -m self_reflection_llm.generation.generate_reflection_data_code
-PYTHONPATH=src python -m self_reflection_llm.generation.generate_reflection_data_table
-```
-
-For local reflection-critic generation, set:
-
-```bash
-export REFLECTOR_CRITIC_MODEL=<critic-model-or-checkpoint>
-```
-
-Some generation scripts expect external intermediate attack files from the
-original data construction workflow. The released processed files needed for SFT
-are already included under `results/DRA_processed/`.
+- `query_openai.py`
+- `trajectory_initialization.py` (`TI`)
+- `teacher_guided_reflection.py` (`TGR`)
+- `reflection_trajectory_construction.py` (`RTC`)
 
 ## Standalone Evaluation
 
@@ -241,7 +236,7 @@ export OPENAI_BASE_URL=...
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m compileall -q src scripts tests
-bash -n scripts/sft/prepare_data.sh scripts/sft/reproduce_data.sh scripts/sft/train_sft.sh scripts/sft/validate_sft.sh
+bash -n scripts/sft/prepare_data.sh scripts/sft/train_sft.sh scripts/sft/validate_sft.sh
 bash -n scripts/rl/workflow.sh scripts/rl/run_gdpo.sh scripts/rl/validate_rl.sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m pytest tests/test_rl_reward.py
 ```

@@ -1,12 +1,40 @@
 import os
+import json
 from dataclasses import dataclass
+from pathlib import Path
 import torch
 import transformers
 from accelerate import PartialState
+from datasets import Dataset, DatasetDict
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer
 
-from ..datasets.sft_data import SYSTEM_PROMPT, load_sft_dataset
-from ..paths import SFT_READY_DIR
+SYSTEM_PROMPT = "You are a helpful and harmless assistant."
+DEFAULT_EXTERNAL_SFT_DIR = Path("/mnt/shared-storage-user/majiachen/sft_source/sft/ready")
+
+
+def _read_jsonl(path: str | Path) -> list[dict]:
+    path = Path(path).expanduser()
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Missing SFT JSONL file: {path}. Generate reflection trajectories with "
+            "`bash scripts/sft/prepare_data.sh` or pass --train_file/--eval_file explicitly."
+        )
+    rows = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def load_sft_dataset(train_file: str | Path, eval_file: str | Path) -> DatasetDict:
+    return DatasetDict(
+        {
+            "train": Dataset.from_list(_read_jsonl(train_file)),
+            "test": Dataset.from_list(_read_jsonl(eval_file)),
+        }
+    )
 
 def extract_train_name_from_path(model_path: str) -> str:
     parts = model_path.split("train:")
@@ -35,8 +63,8 @@ class PeftArguments:
 
 @dataclass
 class DataArguments:
-    train_file: str = str(SFT_READY_DIR / "train.jsonl")
-    eval_file: str = str(SFT_READY_DIR / "test.jsonl")
+    train_file: str = str(DEFAULT_EXTERNAL_SFT_DIR / "train.jsonl")
+    eval_file: str = str(DEFAULT_EXTERNAL_SFT_DIR / "test.jsonl")
     system_prompt: str = SYSTEM_PROMPT
 
 @dataclass

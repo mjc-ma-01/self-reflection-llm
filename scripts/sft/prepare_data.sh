@@ -3,26 +3,41 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python}"
-SFT_OUTPUT_DIR="${SFT_OUTPUT_DIR:-${ROOT}/data/sft/ready}"
-LIMIT_PER_FILE="${LIMIT_PER_FILE:-200}"
-HELPFUL_LIMIT="${HELPFUL_LIMIT:-400}"
-TEST_SIZE="${TEST_SIZE:-0.1}"
+INPUT_FILE="${INPUT_FILE:-${ROOT}/data/rl/harmful_pattern.json}"
+OUTPUT_DIR="${OUTPUT_DIR:-${ROOT}/data/processed/reflector_generation}"
+LIMIT="${LIMIT:--1}"
 SEED="${SEED:-42}"
+TI_FILE="${TI_FILE:-${OUTPUT_DIR}/ti.jsonl}"
+TGR_FILE="${TGR_FILE:-${OUTPUT_DIR}/tgr.jsonl}"
+RTC_FILE="${RTC_FILE:-${OUTPUT_DIR}/reflection_trajectories.jsonl}"
 
 export PYTHONPATH="${ROOT}/src:${PYTHONPATH:-}"
 export PYTHONDONTWRITEBYTECODE=1
 
-args=(
-  --output_dir "${SFT_OUTPUT_DIR}"
-  --limit_per_file "${LIMIT_PER_FILE}"
-  --helpful_limit "${HELPFUL_LIMIT}"
-  --test_size "${TEST_SIZE}"
+mkdir -p "${OUTPUT_DIR}"
+
+echo "[SFT prepare][TI] Trajectory Initialization"
+ti_args=(
+  --input_file "${INPUT_FILE}"
+  --output_file "${TI_FILE}"
+  --limit "${LIMIT}"
   --seed "${SEED}"
 )
-
-if [[ "${INCLUDE_HF_MATH:-0}" == "1" ]]; then
-  args+=(--include_hf_math --hf_math_samples_per_type "${HF_MATH_SAMPLES_PER_TYPE:-200}")
+if [[ -n "${MODEL_TRAJECTORY_FIELD:-}" ]]; then
+  ti_args+=(--model_trajectory_field "${MODEL_TRAJECTORY_FIELD}")
 fi
+"${PYTHON_BIN}" -m self_reflection_llm.generation.trajectory_initialization "${ti_args[@]}"
 
-"${PYTHON_BIN}" -m self_reflection_llm.datasets.sft_data \
-  "${args[@]}"
+echo "[SFT prepare][TGR] Teacher-Guided Reflection Generation"
+"${PYTHON_BIN}" -m self_reflection_llm.generation.teacher_guided_reflection \
+  --input_file "${TI_FILE}" \
+  --output_file "${TGR_FILE}" \
+  --limit "${LIMIT}"
+
+echo "[SFT prepare][RTC] Reflection-Based Trajectory Construction"
+"${PYTHON_BIN}" -m self_reflection_llm.generation.reflection_trajectory_construction \
+  --input_file "${TGR_FILE}" \
+  --output_file "${RTC_FILE}" \
+  --limit "${LIMIT}"
+
+echo "[SFT prepare] wrote ${RTC_FILE}"
