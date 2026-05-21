@@ -70,9 +70,10 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 - `data/sft/train.jsonl` and `data/sft/test.jsonl` are the prepared SFT files.
 - `data/sft/manifest.json` records the source files used to produce them.
 - `data/source/` contains released auxiliary source assets.
-- `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are merged
-  from `data/source/` by source-level `ability` and are the default prompt sets
-  for RL internalization.
+- `data/rl/harmful_pattern.json` is rebuilt from the eight local ReflectDataset
+  harmful sources in `mixture.py`, taking 200 rows per source.
+- `data/rl/general_pattern.json` contains the remaining local general mixture:
+  200 `GPT_reflect/correct-correct` rows and 400 `alpaca_eval` rows.
 - Generated JSONL/parquet artifacts are written under `data/processed/`.
 
 ## Stage 1: SFT

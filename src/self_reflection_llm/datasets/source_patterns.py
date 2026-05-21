@@ -1,14 +1,20 @@
-"""Build RL harmful/general pattern files from local source data."""
+"""Build RL harmful/general pattern files from the SFT mixture sources."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from self_reflection_llm.paths import DATA_SRC_DIR, PROJECT_ROOT, RL_DATA_DIR
+from self_reflection_llm.paths import (
+    DATA_SRC_DIR,
+    DRA_PROCESSED_DIR,
+    PROJECT_ROOT,
+    RL_DATA_DIR,
+)
 
 
 @dataclass(frozen=True)
@@ -16,25 +22,82 @@ class SourceSpec:
     data_source: str
     path: Path
     ability: str
+    limit: int
 
 
-SOURCE_SPECS: tuple[SourceSpec, ...] = (
-    SourceSpec("sft_dra_safe_imitation", DATA_SRC_DIR / "DRA_safe_imitation_data_1k_complete.json", "safety"),
-    SourceSpec("sft_drattack_safe_imitation", DATA_SRC_DIR / "DrAttack_safe_imitation_data_500_complete.json", "safety"),
-    SourceSpec("sft_drattack_benign_imitation", DATA_SRC_DIR / "DrAttack(benign)_safe_imitation_data_300_complete.json", "general"),
-    SourceSpec("sft_dra_benign_imitation", DATA_SRC_DIR / "DRA(benign)_safe_imitation_data_200_complete.json", "general"),
-    SourceSpec("sft_gpt_wrong_correct", DATA_SRC_DIR / "GPT_reflect" / "wrong-correct.json", "safety"),
-    SourceSpec("sft_gpt_correct_correct", DATA_SRC_DIR / "GPT_reflect" / "correct-correct.json", "general"),
-    SourceSpec("sft_harm_refuse", DATA_SRC_DIR / "harm_refuse_gptgenerate.json", "safety"),
-    SourceSpec("sft_harm_wrong_refuse", DATA_SRC_DIR / "harm_wrong_refuse_gptgenerate.json", "safety"),
-    SourceSpec("sft_alpaca_eval", DATA_SRC_DIR / "alpaca_eval.json", "general"),
-    SourceSpec("source_drattack_general_query", DATA_SRC_DIR / "DrAttack_general_query_imitation_data_300.json", "general"),
-    SourceSpec("source_general_dataset", DATA_SRC_DIR / "dataset.json", "general"),
-    SourceSpec("source_safework_r1", DATA_SRC_DIR / "safework_r1.jsonl", "safety"),
+HARMFUL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
+    SourceSpec(
+        "sft_rellm_code",
+        DRA_PROCESSED_DIR / "GPT_ReLLM(code)310_filtered_attack_with_reflections.jsonl",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_rellm_paragraph",
+        DRA_PROCESSED_DIR / "GPT_ReLLM(paragraph)470_filtered_attack_with_reflections.jsonl",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_rellm_table",
+        DRA_PROCESSED_DIR / "GPT_ReLLM(table)440_filtered_attack_with_reflections.jsonl",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_dra_safe_imitation",
+        DATA_SRC_DIR / "DRA_safe_imitation_data_1k_complete.json",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_drattack_safe_imitation",
+        DATA_SRC_DIR / "DrAttack_safe_imitation_data_500_complete.json",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_drattack_benign_imitation",
+        DATA_SRC_DIR / "DrAttack(benign)_safe_imitation_data_300_complete.json",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_dra_benign_imitation",
+        DATA_SRC_DIR / "DRA(benign)_safe_imitation_data_200_complete.json",
+        "safety",
+        200,
+    ),
+    SourceSpec(
+        "sft_gpt_wrong_correct",
+        DATA_SRC_DIR / "GPT_reflect" / "wrong-correct.json",
+        "safety",
+        200,
+    ),
+)
+
+
+GENERAL_SOURCE_SPECS: tuple[SourceSpec, ...] = (
+    SourceSpec(
+        "sft_gpt_correct_correct",
+        DATA_SRC_DIR / "GPT_reflect" / "correct-correct.json",
+        "general",
+        200,
+    ),
+    SourceSpec("sft_alpaca_eval", DATA_SRC_DIR / "alpaca_eval.json", "general", 400),
 )
 
 QUERY_KEYS = ("query", "question", "instruction", "prompt", "text_query")
-LABEL_KEYS = ("label", "level", "dataset", "generator")
+LABEL_KEYS = (
+    "reflect_answer",
+    "output",
+    "answer",
+    "response",
+    "label",
+    "level",
+    "dataset",
+    "generator",
+)
 
 
 def _repo_display_path(path: Path) -> str:
@@ -71,11 +134,33 @@ def _first_text(item: dict[str, Any], keys: Iterable[str]) -> tuple[str, str] | 
     return None, None
 
 
+def _insert_continue_tokens(text: str) -> str:
+    if not text or not text.strip():
+        return text
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip(), maxsplit=1)
+    if len(sentences) == 1:
+        first_part, rest_part = sentences[0], ""
+    else:
+        first_part, rest_part = sentences
+    first_part = first_part + "\n<|continue|>\n"
+    if not rest_part:
+        return first_part
+    chunk_size = len(rest_part) // 4
+    new_rest = ""
+    for idx in range(3):
+        new_rest += rest_part[idx * chunk_size : (idx + 1) * chunk_size]
+        new_rest += "<|continue|>"
+    new_rest += rest_part[3 * chunk_size :]
+    return first_part + new_rest
+
+
 def _pattern_record(spec: SourceSpec, item: dict[str, Any], source_idx: int) -> dict[str, Any] | None:
     input_field, query = _first_text(item, QUERY_KEYS)
     if not query:
         return None
     _, label = _first_text(item, LABEL_KEYS)
+    if spec.data_source == "sft_alpaca_eval" and label:
+        label = _insert_continue_tokens(label)
     expected_behavior = "refuse" if spec.ability == "safety" else "answer"
     return {
         "query": query,
@@ -93,12 +178,13 @@ def _pattern_record(spec: SourceSpec, item: dict[str, Any], source_idx: int) -> 
 def build_patterns(limit_per_source: int = -1) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     general: list[dict[str, Any]] = []
     harmful: list[dict[str, Any]] = []
-    for spec in SOURCE_SPECS:
+    for spec in (*HARMFUL_SOURCE_SPECS, *GENERAL_SOURCE_SPECS):
         if not spec.path.exists():
             raise FileNotFoundError(spec.path)
         target = harmful if spec.ability == "safety" else general
+        effective_limit = spec.limit if limit_per_source < 0 else min(spec.limit, limit_per_source)
         for source_idx, item in enumerate(_load_records(spec.path)):
-            if limit_per_source >= 0 and source_idx >= limit_per_source:
+            if source_idx >= effective_limit:
                 break
             record = _pattern_record(spec, item, source_idx)
             if record:
