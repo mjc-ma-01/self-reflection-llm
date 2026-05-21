@@ -1,4 +1,9 @@
-"""TGR: Teacher-Guided Reflection Generation for Reflector."""
+"""TGR: Teacher-Guided Reflection Generation for Reflector.
+
+This stage extracts teacher reflection and exploration spans from the raw
+GPT-5 output produced by TI. It intentionally reuses the original prompt output
+instead of introducing a second, incompatible prompt format.
+"""
 
 from __future__ import annotations
 
@@ -7,36 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from self_reflection_llm.generation.query_openai import GPT5Client, require_text
 from self_reflection_llm.paths import PROCESSED_DATA_DIR
-
-SYSTEM = """You are GPT-5 acting as the teacher model in the REFLECTOR paper.
-You generate structured self-critique for a truncated trajectory. Return JSON only."""
-
-USER_TEMPLATE = """Stage: Teacher-Guided Reflection Generation (TGR)
-
-Paper specification:
-Given an indirect jailbreak query x and a truncated prefix y_before, generate
-z = (z_reflect, z_explore). z_reflect identifies the precise ethical/safety breach.
-z_explore charts a safe path forward for subsequent generation.
-
-Self-Critique & Reflection Template:
-You are a student. Review your incorrect partial solution, reflecting on mistakes and
-proposing alternative ethical solutions.
-1. Analyze the provided step-by-step solution.
-2. Produce one concise first-person critique and one concise alternative ethical claim.
-Do not include meta-text outside the required JSON.
-
-Original query x:
-{query}
-
-Truncated prefix y_before:
-{y_before}
-
-Required JSON keys:
-- z_reflect: first-person reflection identifying the exact mistake/safety breach.
-- z_explore: first-person safe exploration plan that redirects toward a lawful, harmless response.
-"""
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -47,6 +23,26 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
             if line:
                 rows.append(json.loads(line))
     return rows
+
+
+def _until_marker(text: str) -> str:
+    candidates = [idx for marker in ("<|explore|>", "<|continue|>", "<|reflect|>") if (idx := text.find(marker)) >= 0]
+    return text[: min(candidates)].strip() if candidates else text.strip()
+
+
+def _extract_reflection(raw_reflect_answer: str) -> tuple[str, str]:
+    if "<|reflect|>" not in raw_reflect_answer:
+        raise ValueError("raw_reflect_answer is missing <|reflect|>.")
+    after_reflect = raw_reflect_answer.split("<|reflect|>", 1)[1]
+    if "<|explore|>" in after_reflect:
+        z_reflect, after_explore = after_reflect.split("<|explore|>", 1)
+        z_explore = _until_marker(after_explore)
+    else:
+        z_reflect = _until_marker(after_reflect)
+        z_explore = ""
+    if not z_reflect.strip():
+        raise ValueError("empty z_reflect extracted from raw_reflect_answer.")
+    return z_reflect.strip(), z_explore.strip()
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -62,19 +58,14 @@ def main() -> None:
     rows = _read_jsonl(args.input_file)
     if args.limit >= 0:
         rows = rows[: args.limit]
-    client = GPT5Client()
     args.output_file.expanduser().parent.mkdir(parents=True, exist_ok=True)
 
     with args.output_file.expanduser().open("w", encoding="utf-8") as handle:
         for row in rows:
-            response = client.json_completion(
-                system=SYSTEM,
-                user=USER_TEMPLATE.format(query=row["query"], y_before=row["y_before"]),
-                max_tokens=1200,
-                temperature=0.2,
-            )
-            z_reflect = require_text(response, "z_reflect")
-            z_explore = require_text(response, "z_explore")
+            raw_reflect_answer = row.get("raw_reflect_answer")
+            if not isinstance(raw_reflect_answer, str) or not raw_reflect_answer.strip():
+                raise ValueError(f"TI row {row.get('id')} is missing raw_reflect_answer.")
+            z_reflect, z_explore = _extract_reflection(raw_reflect_answer)
             out = {
                 **row,
                 "z_reflect": z_reflect,

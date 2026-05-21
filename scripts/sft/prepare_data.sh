@@ -7,6 +7,7 @@ INPUT_FILE="${INPUT_FILE:-${ROOT}/data/rl/harmful_pattern.json}"
 OUTPUT_DIR="${OUTPUT_DIR:-${ROOT}/data/processed/reflector_generation}"
 LIMIT="${LIMIT:--1}"
 SEED="${SEED:-42}"
+PROMPT_PRESET="${PROMPT_PRESET:-dra}"
 TI_FILE="${TI_FILE:-${OUTPUT_DIR}/ti.jsonl}"
 TGR_FILE="${TGR_FILE:-${OUTPUT_DIR}/tgr.jsonl}"
 RTC_FILE="${RTC_FILE:-${OUTPUT_DIR}/reflection_trajectories.jsonl}"
@@ -22,6 +23,7 @@ ti_args=(
   --output_file "${TI_FILE}"
   --limit "${LIMIT}"
   --seed "${SEED}"
+  --prompt_preset "${PROMPT_PRESET}"
 )
 if [[ -n "${MODEL_TRAJECTORY_FIELD:-}" ]]; then
   ti_args+=(--model_trajectory_field "${MODEL_TRAJECTORY_FIELD}")

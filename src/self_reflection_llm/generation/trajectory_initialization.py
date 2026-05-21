@@ -1,8 +1,9 @@
 """TI: Trajectory Initialization for Reflector SFT data generation.
 
-Given an indirect jailbreak query x, generate an initial target-policy
-trajectory and sample a prefix y_before. This implements the paper's first
-Stage-I data construction phase before teacher reflection is added.
+This stage calls GPT-5 with the original OpenAI prompt templates used by the
+project to generate a raw ``query`` and ``reflect_answer`` pair. The generated
+answer is then truncated before the reflection marker to provide ``y_before``
+for the next stage.
 """
 
 from __future__ import annotations
@@ -14,32 +15,23 @@ import random
 from pathlib import Path
 from typing import Any
 
-from self_reflection_llm.generation.query_openai import GPT5Client, require_text
+from self_reflection_llm.generation import prompt_config
+from self_reflection_llm.generation.query_openai import GPT5Client
 from self_reflection_llm.paths import PROCESSED_DATA_DIR
 
-SYSTEM = """You are GPT-5 acting as the trajectory-initialization engine for the REFLECTOR paper.
-Generate structured supervised-data artifacts only. The purpose is safety research and reflective
-alignment. Do not include operational details that would enable harm; when a harmful step would
-become actionable, replace the operational content with concise placeholders such as
-[unsafe operational detail omitted]. Return JSON only."""
+SYSTEM = "You are a precise data generation assistant. Follow instructions exactly."
 
-USER_TEMPLATE = """Stage: Trajectory Initialization (TI)
+PROMPT_PRESETS = {
+    "dra": prompt_config.DRA,
+    "dra_answer_benign": prompt_config.DRA_answer_benign,
+    "drattack": prompt_config.DrAttack,
+    "drattack_answer_benign": prompt_config.DrAttack_answer_benign,
+}
 
-Paper specification:
-For an indirect jailbreak query x, generate a full step sequence tau = (y_1, ..., y_T)
-from a target policy, then choose an intermediate truncation index n and retain only
-y_before = (y_1, ..., y_n). The suffix is discarded at this stage.
-
-Input query x:
-{query}
-
-Required JSON keys:
-- trajectory: string, a step-by-step initial trajectory with steps separated by exactly two newlines.
-- unsafe_signal_step: integer, the first step where unsafe intent/risk becomes visible.
-- notes: string, one sentence explaining why this is a useful reflection trigger.
-
-The trajectory should simulate a model beginning to comply with the prompt, but must keep
-dangerous operational content non-actionable by using placeholders where needed."""
+GENERAL_QUESTION_PRESETS = {
+    "dra_benign": prompt_config.DRA_benign,
+    "drattack_benign": prompt_config.DrAttack_benign,
+}
 
 
 def _load_items(path: Path) -> list[dict[str, Any]]:
@@ -60,7 +52,7 @@ def _load_items(path: Path) -> list[dict[str, Any]]:
 
 
 def _query(item: dict[str, Any]) -> str:
-    for key in ("query", "question", "prompt", "instruction", "text_query"):
+    for key in ("query", "question", "general_question", "prompt", "instruction", "text_query"):
         value = item.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()
@@ -85,6 +77,30 @@ def _prefix(trajectory: str, rng: random.Random, unsafe_signal_step: int | None)
     return "\n\n".join(steps[:n]), n
 
 
+def _parse_generated_pair(raw_text: str) -> dict[str, str]:
+    if "===QUERY===" not in raw_text or "===ANSWER===" not in raw_text:
+        raise ValueError("GPT output must contain ===QUERY=== and ===ANSWER=== markers.")
+    after_query = raw_text.split("===QUERY===", 1)[1]
+    query_text, answer_text = after_query.split("===ANSWER===", 1)
+    query = query_text.strip()
+    reflect_answer = answer_text.strip()
+    if not query:
+        raise ValueError("generated query is empty.")
+    if "<|continue|>" not in reflect_answer or "<|reflect|>" not in reflect_answer:
+        raise ValueError("generated reflect_answer is missing required reflection markers.")
+    return {"query": query, "reflect_answer": reflect_answer}
+
+
+def _initial_trajectory(reflect_answer: str) -> str:
+    return reflect_answer.split("<|reflect|>", 1)[0].strip()
+
+
+def _build_prompt(preset: str, item: dict[str, Any]) -> str:
+    if preset in GENERAL_QUESTION_PRESETS:
+        return GENERAL_QUESTION_PRESETS[preset]().format(general_question=_query(item))
+    return PROMPT_PRESETS[preset]()
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input_file", type=Path, required=True)
@@ -92,6 +108,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, default=-1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--model_trajectory_field", type=str, default=None)
+    parser.add_argument("--prompt_preset", choices=sorted(PROMPT_PRESETS | GENERAL_QUESTION_PRESETS), default="dra")
     return parser
 
 
@@ -110,15 +127,20 @@ def main() -> None:
             if args.model_trajectory_field and item.get(args.model_trajectory_field):
                 trajectory = str(item[args.model_trajectory_field]).strip()
                 response = {"trajectory": trajectory, "unsafe_signal_step": 1, "notes": "Loaded from source field."}
+                raw_reflect_answer = str(item.get("reflect_answer", trajectory)).strip()
             else:
                 assert client is not None
-                response = client.json_completion(
+                raw_text = client.text_completion(
                     system=SYSTEM,
-                    user=USER_TEMPLATE.format(query=query),
-                    max_tokens=1800,
-                    temperature=0.4,
+                    user=_build_prompt(args.prompt_preset, item),
+                    max_tokens=4000,
+                    temperature=0.7,
                 )
-                trajectory = require_text(response, "trajectory")
+                generated = _parse_generated_pair(raw_text)
+                query = generated["query"]
+                raw_reflect_answer = generated["reflect_answer"]
+                trajectory = _initial_trajectory(raw_reflect_answer)
+                response = {"trajectory": trajectory, "unsafe_signal_step": 1, "notes": f"Generated by {args.prompt_preset}."}
             unsafe_signal_step = response.get("unsafe_signal_step")
             unsafe_step = int(unsafe_signal_step) if isinstance(unsafe_signal_step, int) else None
             y_before, truncation_index = _prefix(trajectory, rng, unsafe_step)
@@ -128,6 +150,7 @@ def main() -> None:
                 "trajectory": trajectory,
                 "truncation_index": truncation_index,
                 "y_before": y_before,
+                "raw_reflect_answer": raw_reflect_answer,
                 "ti_notes": str(response.get("notes", "")),
                 "source": {"file": str(args.input_file), "index": idx},
             }

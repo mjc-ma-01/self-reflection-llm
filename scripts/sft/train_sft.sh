@@ -13,8 +13,8 @@ export TOKENIZERS_PARALLELISM=false
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}src"
 model_name=${MODEL_NAME:-llama_8b}
 model_path=${MODEL_PATH:-meta-llama/Llama-3.1-8B-Instruct}
-sft_train_file=${SFT_TRAIN_FILE:-/mnt/shared-storage-user/majiachen/sft_source/sft/ready/train.jsonl}
-sft_eval_file=${SFT_EVAL_FILE:-/mnt/shared-storage-user/majiachen/sft_source/sft/ready/test.jsonl}
+sft_train_file=${SFT_TRAIN_FILE:-data/sft/train.jsonl}
+sft_eval_file=${SFT_EVAL_FILE:-data/sft/test.jsonl}
 
 train_task_names=${TRAIN_TASK_NAMES:-reflector_sft_ready_local_lr5e-6_epoch5_warmup0.05}
 output_root=${OUTPUT_ROOT:-outputs/reflect_models}

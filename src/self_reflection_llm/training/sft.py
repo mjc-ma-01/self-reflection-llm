@@ -9,7 +9,7 @@ from datasets import Dataset, DatasetDict
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer
 
 SYSTEM_PROMPT = "You are a helpful and harmless assistant."
-DEFAULT_EXTERNAL_SFT_DIR = Path("/mnt/shared-storage-user/majiachen/sft_source/sft/ready")
+DEFAULT_SFT_DIR = Path("data/sft")
 
 
 def _read_jsonl(path: str | Path) -> list[dict]:
@@ -63,8 +63,8 @@ class PeftArguments:
 
 @dataclass
 class DataArguments:
-    train_file: str = str(DEFAULT_EXTERNAL_SFT_DIR / "train.jsonl")
-    eval_file: str = str(DEFAULT_EXTERNAL_SFT_DIR / "test.jsonl")
+    train_file: str = str(DEFAULT_SFT_DIR / "train.jsonl")
+    eval_file: str = str(DEFAULT_SFT_DIR / "test.jsonl")
     system_prompt: str = SYSTEM_PROMPT
 
 @dataclass

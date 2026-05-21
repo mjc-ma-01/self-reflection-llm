@@ -33,6 +33,7 @@ flow is therefore split into two modules.
 │   └── deepspeed_zero2.yaml
 ├── data/
 │   ├── source/                  # released source assets
+│   ├── sft/                     # prepared SFT train/test plus manifest
 │   ├── rl/                      # released RL prompt data
 │   └── processed/               # generated train/eval artifacts, gitignored
 ├── docs/
@@ -66,9 +67,8 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 
 ## Data Assets
 
-- SFT source/ready artifacts were moved outside the repository to
-  `/mnt/shared-storage-user/majiachen/sft_source/` so repository `prepare`
-  refers only to reflection-data generation.
+- `data/sft/train.jsonl` and `data/sft/test.jsonl` are the prepared SFT files.
+- `data/sft/manifest.json` records the source files used to produce them.
 - `data/source/` contains released auxiliary source assets.
 - `data/rl/general_pattern.json` and `data/rl/harmful_pattern.json` are the
   default prompt sets for RL internalization.
@@ -76,25 +76,32 @@ Path handling is centralized in `src/self_reflection_llm/paths.py`.
 
 ## Stage 1: SFT
 
-In this repository, **prepare means generating reflection trajectories**, not
-merging already marked files into an SFT dataset. The generation pipeline
-follows Appendix B of the paper:
+In this repository, **prepare means generating reflection trajectories**. The
+checked-in `data/sft/train.jsonl` and `data/sft/test.jsonl` files are the
+default SFT inputs, while this optional reproduction module regenerates raw
+reflection trajectories with the original OpenAI prompt templates restored in
+`src/self_reflection_llm/generation/prompt_config.py`.
 
-1. **TI: Trajectory Initialization** creates a target-policy trajectory and a
-   truncated prefix `y_before` for each query.
-2. **TGR: Teacher-Guided Reflection Generation** asks GPT-5 for
-   `z_reflect` and `z_explore` from `(x, y_before)`.
-3. **RTC: Reflection-Based Trajectory Construction** asks GPT-5 for the safe
-   continuation `y_after` and assembles `(y_before, z, y_after)`.
+1. **TI: Trajectory Initialization** calls GPT-5 with one restored prompt
+   preset and parses the generated `query` plus `reflect_answer`.
+2. **TGR: Teacher-Guided Reflection Generation** extracts `z_reflect` and
+   `z_explore` from the generated reflection markers.
+3. **RTC: Reflection-Based Trajectory Construction** writes the final
+   reflection trajectory in the SFT JSONL schema.
 
 Run all three generation stages:
 
 ```bash
 OPENAI_API_KEY=<key> \
 OPENAI_MODEL=gpt-5 \
+PROMPT_PRESET=dra \
 INPUT_FILE=data/rl/harmful_pattern.json \
 bash scripts/sft/prepare_data.sh
 ```
+
+Available `PROMPT_PRESET` values are `dra`, `drattack`,
+`dra_answer_benign`, `drattack_answer_benign`, `dra_benign`, and
+`drattack_benign`.
 
 The final generated reflection trajectories are written to:
 
@@ -133,8 +140,8 @@ PYTHONPATH=src accelerate launch \
   --config_file config/deepspeed_zero2.yaml \
   -m self_reflection_llm.training.sft \
   --model_path <base-model-or-checkpoint> \
-  --train_file <train-jsonl> \
-  --eval_file <eval-jsonl>
+  --train_file data/sft/train.jsonl \
+  --eval_file data/sft/test.jsonl
 ```
 
 Validate an SFT checkpoint by generating answers and running post-hoc scoring:

@@ -1,0 +1,34 @@
+{
+  "train_records": 2340,
+  "test_records": 260,
+  "total_records": 2600,
+  "train_marker_counts": {
+    "<|reflect|>": 1917,
+    "<|explore|>": 1235,
+    "<|continue|>": 2339
+  },
+  "test_marker_counts": {
+    "<|reflect|>": 217,
+    "<|explore|>": 154,
+    "<|continue|>": 260
+  },
+  "schema": {
+    "data_source": "source bucket for the supervised example",
+    "prompt": "chat messages used as the supervised prompt",
+    "response": "assistant target text",
+    "ability": "safety, general, or math",
+    "extra_info": "source path, source index, and marker flags",
+    "question": "backward-compatible user text alias",
+    "label": "backward-compatible assistant target alias"
+  },
+  "args": {
+    "output_dir": "/mnt/shared-storage-user/majiachen/self-reflection-llm/data/sft",
+    "test_size": 0.1,
+    "seed": 42,
+    "limit_per_file": 200,
+    "helpful_limit": 400,
+    "system_prompt": "You are a helpful and harmless assistant.",
+    "include_hf_math": false,
+    "hf_math_samples_per_type": 200
+  }
+}

@@ -1,4 +1,9 @@
-"""RTC: Reflection-Based Trajectory Construction for Reflector."""
+"""RTC: Reflection-Based Trajectory Construction for Reflector.
+
+This stage converts the reflection-augmented raw answer from TI/TGR into the
+SFT JSONL schema. It does not call another prompt; the prepared trajectory comes
+from the original OpenAI prompt template restored in ``prompt_config.py``.
+"""
 
 from __future__ import annotations
 
@@ -7,42 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from self_reflection_llm.generation.query_openai import GPT5Client, require_text
 from self_reflection_llm.paths import PROCESSED_DATA_DIR
-
-SYSTEM = """You are GPT-5 completing REFLECTOR supervised trajectories.
-Continue from reflection guidance into a safe final answer. Return JSON only."""
-
-USER_TEMPLATE = """Stage: Reflection-Based Trajectory Construction (RTC)
-
-Paper specification:
-Assemble a complete reflection-augmented trajectory tau_tilde = (y_before, z, y_after).
-The continuation y_after must follow z_reflect and z_explore and terminate in a safe state.
-
-Safety Generation Prompt Template:
-Your task is to continue writing a few brief sentences, adhering to helpful,
-respectful, and honest principles. You must strictly refrain from offering methods,
-details, or instructions to carry out illegal, violent, or harmful actions. In your
-continuation, you must:
-- explicitly and briefly refuse to assist with unsafe activity when applicable;
-- provide specific legal alternatives such as law enforcement, legal aid, mediation,
-  cybersecurity hardening, or professional assistance;
-- remain logically consistent with the reflection and exploration.
-
-Original query x:
-{query}
-
-Prefix y_before:
-{y_before}
-
-Reflection z_reflect:
-{z_reflect}
-
-Exploration z_explore:
-{z_explore}
-
-Required JSON keys:
-- y_after: safe continuation text only. Do not repeat the special tokens."""
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -59,6 +29,16 @@ def _valid(text: str) -> bool:
     return "<|reflect|>" in text and "<|explore|>" in text and "<|continue|>" in text
 
 
+def _reflect_answer(row: dict[str, Any]) -> str:
+    raw_reflect_answer = row.get("raw_reflect_answer")
+    if isinstance(raw_reflect_answer, str) and raw_reflect_answer.strip():
+        return raw_reflect_answer.strip()
+    return (
+        f"{row['y_before']}\n\n<|reflect|>\n{row['z_reflect']}"
+        f"\n<|explore|>\n{row['z_explore']}\n<|continue|>"
+    )
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input_file", type=Path, default=PROCESSED_DATA_DIR / "reflector_generation" / "tgr.jsonl")
@@ -72,27 +52,11 @@ def main() -> None:
     rows = _read_jsonl(args.input_file)
     if args.limit >= 0:
         rows = rows[: args.limit]
-    client = GPT5Client()
     args.output_file.expanduser().parent.mkdir(parents=True, exist_ok=True)
 
     with args.output_file.expanduser().open("w", encoding="utf-8") as handle:
         for row in rows:
-            response = client.json_completion(
-                system=SYSTEM,
-                user=USER_TEMPLATE.format(
-                    query=row["query"],
-                    y_before=row["y_before"],
-                    z_reflect=row["z_reflect"],
-                    z_explore=row["z_explore"],
-                ),
-                max_tokens=1600,
-                temperature=0.2,
-            )
-            y_after = require_text(response, "y_after")
-            reflect_answer = (
-                f"{row['y_before']}\n\n<|reflect|>\n{row['z_reflect']}"
-                f"\n<|explore|>\n{row['z_explore']}\n<|continue|>\n{y_after}"
-            )
+            reflect_answer = _reflect_answer(row)
             out = {
                 "id": row["id"],
                 "query": row["query"],
