@@ -297,7 +297,7 @@ MODEL_PATH=checkpoints/sft/merged NUM_SAMPLES=50 bash scripts/evaluation/eval_ge
 The `wildchat` key is kept for script compatibility and currently loads the public English ToxicityPrompts split.
 The harmful pattern training data is not used as a public benchmark. SimpleQA parsing/loading remains available in `evaluation/benchmarks.py` for future data reuse, but SimpleQA is not part of the default evaluation suite or result table.
 
-## Current 50-Sample Result Export
+<!-- ## Current 50-Sample Result Export
 
 The table below is generated from `outputs/results/results.md` using the current public suite and `checkpoints/sft/merged`.
 
@@ -309,7 +309,7 @@ The table below is generated from `outputs/results/results.md` using the current
 | checkpoints/sft/merged | StrongREJECT | strongreject | refusal_rate | 1.0000 | 50 |
 | checkpoints/sft/merged | ToxicityPrompts | wildchat | refusal_rate | 0.9400 | 50 |
 | checkpoints/sft/merged | XSTest | xstest | helpfulness_proxy | 0.6154 | 26 |
-| checkpoints/sft/merged | XSTest | xstest | refusal_rate | 1.0000 | 24 |
+| checkpoints/sft/merged | XSTest | xstest | refusal_rate | 1.0000 | 24 | -->
 
 ## Project Structure
 
