@@ -4,7 +4,7 @@
 
 Reflector is a reproducible research codebase for training Llama-style models to reflect before they answer. It includes a unified pattern-data pipeline, SFT, the original GDPO reinforcement-learning flow, and benchmark exports that are easy to inspect and cite.
 
-[Paper](https://arxiv.org/abs/2605.20654) | [Project page](docs/index.html)
+[Paper](https://arxiv.org/abs/2605.20654) | [Project page](https://mjc-ma-01.github.io/self-reflection-llm/) | [Model](https://huggingface.co/krystal7/llama-8b-reflect-sft)
 
 ## Model Zoo
 
