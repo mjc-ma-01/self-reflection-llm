@@ -1,0 +1,19 @@
+{
+  "schema_version": "pattern-v1",
+  "source_dir": "datasets/sft/source",
+  "train_file": "datasets/sft/train.jsonl",
+  "test_file": "datasets/sft/test.jsonl",
+  "records": 2200,
+  "train_records": 1980,
+  "test_records": 220,
+  "pattern_counts": {
+    "harmful": 1600,
+    "general": 600
+  },
+  "args": {
+    "test_size": 0.1,
+    "seed": 42,
+    "limit_per_pattern": -1,
+    "system_prompt": "You are a helpful and harmless assistant."
+  }
+}

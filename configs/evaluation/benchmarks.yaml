@@ -1,0 +1,18 @@
+benchmarks:
+  - key: strongreject
+    display_name: StrongREJECT
+  - key: xstest
+    display_name: XSTest
+  - key: wildchat
+    display_name: ToxicityPrompts
+  - key: donot
+    display_name: Do-Not-Answer
+  - key: gsm8k
+    display_name: GSM8K
+  - key: general
+    display_name: General Benchmark
+
+defaults:
+  num_samples: 200
+  seed: 42
+  output_dir: outputs/results

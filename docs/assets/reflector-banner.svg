@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Reflector banner</title>
+  <desc id="desc">A clean research-style diagram showing a user query, reflection loop, and safe answer.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbfcfb"/>
+      <stop offset="1" stop-color="#eef5f1"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#c58b2b"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#16352f" flood-opacity=".13"/>
+    </filter>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M 44 0 L 0 0 0 44" fill="none" stroke="#dfe9e4" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="520" fill="url(#paper)"/>
+  <rect width="1600" height="520" fill="url(#grid)" opacity=".55"/>
+  <path d="M0 412 C220 372 310 478 532 423 C741 371 856 313 1030 354 C1231 401 1320 451 1600 371 L1600 520 L0 520 Z" fill="#e0eee8" opacity=".72"/>
+  <g transform="translate(122 82)">
+    <text x="0" y="64" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial" font-size="70" font-weight="740" fill="#16201d">Reflector</text>
+    <text x="0" y="118" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial" font-size="28" fill="#3d514b">Internalizing self-reflection for safer, more reliable Llama-style reasoning.</text>
+    <rect x="0" y="164" width="470" height="8" rx="4" fill="url(#accent)"/>
+    <g transform="translate(0 220)" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial" font-size="22" fill="#31423d">
+      <text x="0" y="0">SFT-ready data pipeline</text>
+      <text x="0" y="46">GDPO reinforcement learning</text>
+      <text x="0" y="92">Reproducible benchmark reports</text>
+    </g>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="722" y="104" width="248" height="120" rx="18" fill="#ffffff" stroke="#d5e3dd"/>
+    <rect x="726" y="108" width="240" height="28" rx="14" fill="#edf6f2"/>
+    <text x="758" y="179" font-family="Inter, ui-sans-serif, system-ui" font-size="24" font-weight="700" fill="#19322d">User query</text>
+    <text x="760" y="208" font-family="Inter, ui-sans-serif, system-ui" font-size="17" fill="#60706b">intent + context</text>
+    <rect x="1042" y="70" width="260" height="188" rx="22" fill="#ffffff" stroke="#cfe0d8"/>
+    <text x="1082" y="128" font-family="Inter, ui-sans-serif, system-ui" font-size="25" font-weight="760" fill="#19322d">Reflection</text>
+    <path d="M1090 166 H1254" stroke="#0f766e" stroke-width="10" stroke-linecap="round" opacity=".78"/>
+    <path d="M1090 198 H1216" stroke="#c58b2b" stroke-width="10" stroke-linecap="round" opacity=".78"/>
+    <path d="M1090 230 H1268" stroke="#d7e6df" stroke-width="10" stroke-linecap="round"/>
+    <rect x="1165" y="302" width="275" height="120" rx="18" fill="#ffffff" stroke="#d5e3dd"/>
+    <text x="1206" y="366" font-family="Inter, ui-sans-serif, system-ui" font-size="24" font-weight="740" fill="#19322d">Safe answer</text>
+    <text x="1208" y="395" font-family="Inter, ui-sans-serif, system-ui" font-size="17" fill="#60706b">refusal when needed</text>
+  </g>
+  <path d="M970 164 C1004 164 1016 164 1042 164" fill="none" stroke="#59766e" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M1170 258 C1162 286 1172 306 1192 326" fill="none" stroke="#59766e" stroke-width="3"/>
+  <path d="M846 224 C858 296 966 338 1165 362" fill="none" stroke="#c58b2b" stroke-width="3" stroke-dasharray="8 10"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#59766e"/>
+    </marker>
+  </defs>
+</svg>

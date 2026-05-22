@@ -5,9 +5,14 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.cache/
+.backups/
+hf_cache/
 
 wandb/
 outputs/
-data/processed/
+outputs
+checkpoints/
+checkpoints
 
 *.log

@@ -1,5 +1,5 @@
-from self_reflection_llm.rl.gdpo import group_decoupled_advantages
-from self_reflection_llm.rl.reward import MARK_CONTINUE, MARK_EXPLORE, MARK_REFLECT, compute_score_segmented, split_response_by_markers
+from training.rl.gdpo import group_decoupled_advantages
+from training.rl.reward import MARK_CONTINUE, MARK_EXPLORE, MARK_REFLECT, compute_score_segmented, split_response_by_markers
 
 
 def test_split_response_by_markers_prefers_continue_for_final_text():

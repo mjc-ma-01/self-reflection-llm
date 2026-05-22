@@ -1,0 +1,16 @@
+{
+  "schema_version": "pattern-v1",
+  "description": "SFT data built only from harmful_pattern.json and general_pattern.json.",
+  "sources": [
+    {
+      "pattern_type": "harmful",
+      "path": "datasets/sft/source/harmful_pattern.json"
+    },
+    {
+      "pattern_type": "general",
+      "path": "datasets/sft/source/general_pattern.json"
+    }
+  ],
+  "train_file": "datasets/sft/train.jsonl",
+  "test_file": "datasets/sft/test.jsonl"
+}

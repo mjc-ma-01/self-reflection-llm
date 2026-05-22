@@ -1,0 +1,27 @@
+{
+  "bf16": {
+    "enabled": "auto"
+  },
+  "fp16": {
+    "enabled": "auto"
+  },
+  "zero_optimization": {
+    "stage": 2,
+    "offload_optimizer": {
+      "device": "none"
+    },
+    "offload_param": {
+      "device": "none"
+    },
+    "allgather_partitions": true,
+    "reduce_scatter": true,
+    "overlap_comm": true,
+    "contiguous_gradients": true
+  },
+  "gradient_accumulation_steps": "auto",
+  "gradient_clipping": "auto",
+  "train_batch_size": "auto",
+  "train_micro_batch_size_per_gpu": "auto",
+  "steps_per_print": 2000,
+  "wall_clock_breakdown": false
+}
