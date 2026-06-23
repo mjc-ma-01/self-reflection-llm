@@ -4,15 +4,14 @@
 
 Reflector is a reproducible research codebase for training Llama-style models to reflect before they answer. It includes a unified pattern-data pipeline, SFT, the original GDPO reinforcement-learning flow, and benchmark exports that are easy to inspect and cite.
 
-[Paper](https://arxiv.org/abs/2605.20654) | [Project page](https://mjc-ma-01.github.io/self-reflection-llm/) | [Model](https://huggingface.co/krystal7/llama-8b-reflect-sft)
+[Paper](https://arxiv.org/abs/2605.20654) | [Project page](https://mjc-ma-01.github.io/self-reflection-llm/) | [SFT Model](https://huggingface.co/krystal7/llama-8b-reflect-sft) | [RL Model](https://huggingface.co/krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL)
 
 ## Model Zoo
 
 | Model | Type | Description | HuggingFace |
 |---|---|---|---|
 | `krystal7/llama-8b-reflect-sft` | SFT | Reflection-aligned Llama 3-family 8B model trained with the Reflector SFT pipeline. | [Model page](https://huggingface.co/krystal7/llama-8b-reflect-sft)<br>`AutoModelForCausalLM.from_pretrained("krystal7/llama-8b-reflect-sft")` |
-
-No RL checkpoint is published yet. The repository includes the GDPO RL pipeline and will add an RL model entry after a full RL checkpoint is released.
+| `krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL` | RL | Reflector RL checkpoint trained with GDPO to reinforce step-wise reflection, risk recognition, and safe final answers for indirect jailbreak-style prompts. | [Model page](https://huggingface.co/krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL)<br>`AutoModelForCausalLM.from_pretrained("krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL")` |
 
 ## Core Features
 
@@ -51,7 +50,7 @@ huggingface-cli login --token "$HF_TOKEN"
 
 ## Quick Start
 
-Load the published SFT model:
+Load a published Reflector model:
 
 ```python
 import os
@@ -59,6 +58,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model_id = "krystal7/llama-8b-reflect-sft"
+# Or use the RL checkpoint:
+# model_id = "krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL"
 
 os.environ.setdefault("HF_HOME", "./hf_cache")
 os.environ.setdefault("HUGGINGFACE_HUB_CACHE", os.path.join(os.environ["HF_HOME"], "hub"))
@@ -109,12 +110,14 @@ outputs/results/results.md
 
 ## Model Setup
 
-Use the released Reflector SFT model directly:
+Use a released Reflector model directly:
 
 ```bash
 export HF_HOME=$PWD/hf_cache
 export HUGGINGFACE_HUB_CACHE=$HF_HOME/hub
 export MODEL_PATH=krystal7/llama-8b-reflect-sft
+# Or:
+# export MODEL_PATH=krystal7/Reflector-Internalizing-Safety-Llama-3.1-8B-RL
 ```
 
 For from-base reproduction, use the original Meta Llama 3 8B Instruct model when you have access:
@@ -357,11 +360,10 @@ export SELF_REFLECTION_BACKUP_ROOT=/path/to/backup
 ## Citation
 
 ```bibtex
-@misc{reflector2026,
-  title        = {Reflector: Internalizing Self-Reflection into Language Models},
-  year         = {2026},
-  eprint       = {2605.20654},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CL}
+@article{ma2026reflector,
+  title={REFLECTOR: Internalizing Step-wise Reflection against Indirect Jailbreak},
+  author={Ma, Jiachen and Zhang, Jiawen and Li, Xiangtian and Zou, Bo and Lu, Chaochao and Yang, Chao},
+  journal={arXiv preprint arXiv:2605.20654},
+  year={2026}
 }
 ```
